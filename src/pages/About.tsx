@@ -68,7 +68,7 @@ const About: React.FC = () => {
 
           <div className="w-8 h-px bg-zinc-200 mx-auto" />
 
-          <div className="max-w-2xl mx-auto text-left space-y-5">
+          <div className="max-w-5xl mx-auto text-left space-y-5">
             <p className="text-zinc-500 text-base leading-relaxed">
               SKAI는 이스라엘 내 한인 유학생들의 화합과 성장, 그리고 더 나은 미래를 위해 만들어진 학생회 플랫폼입니다.
             </p>
