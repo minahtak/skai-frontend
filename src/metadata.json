@@ -1,0 +1,8 @@
+{
+  "name": "IKSU",
+  "description": "Israel Korean Student Union.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
