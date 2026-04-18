@@ -83,12 +83,12 @@ const InfoList: React.FC<InfoListProps> = ({ infos, user, setInfos }) => {
     <>
 
       <Helmet>
-        <title>Life Guide (생활/맛집) | SKAI 이스라엘 한인 학생회</title>
+        <title>생활 가이드 | SKAI 이스라엘 한인 학생회</title>
         <meta name="description" content="이스라엘 유학 생활의 필수 정보! 현지 맛집, 주거, 취업, 비자 등 유학생들이 직접 작성한 생생한 가이드를 확인하세요." />
         <meta name="keywords" content="이스라엘 맛집, 이스라엘 취업, 이스라엘 비자, 이스라엘 생활, 한인 학생회" />
         <meta property="og:title" content="이스라엘 생활 가이드 | SKAI" />
         <meta property="og:description" content="이스라엘 맛집부터 현지 꿀팁까지, 유학생을 위한 모든 정보" />
-        <meta property="og:image" content="https://구매할도매인.com/logo3.png" />
+        <meta property="og:image" content="https://skaisrael.com/logo3.png" />
       </Helmet>
 
       <div className="space-y-12 max-w-7xl mx-auto relative">

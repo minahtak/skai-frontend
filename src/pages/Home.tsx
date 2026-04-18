@@ -44,14 +44,10 @@ const Home: React.FC<HomeProps> = ({ notices, infos }) => {
             <span className="inline-block px-4 py-1.5 bg-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] rounded-full mt-4 mb-4">
               Student Korean Association in Israel
             </span>
-            <h1 className="text-4xl md:text-6xl font-black mb-6 leading-tight tracking-tight">
+            <h1 className="text-4xl md:text-6xl font-black mb-9 leading-tight tracking-tight">
               Connecting Scholars,<br />
               <span className="text-indigo-400">Empowering</span> Your Journey.
             </h1>
-            <p className="text-sm md:text-lg text-slate-300 mb-8 leading-relaxed font-medium">
-              이스라엘 전역의 한국인 학생들을 위한 학술 아카이브와<br className="hidden md:block" />
-              정착 가이드를 제공합니다.
-            </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link to="/about" className="px-8 py-4 bg-white text-slate-950 rounded-2xl font-black text-center text-sm hover:bg-white/95 hover:shadow-xl transition-all">학생회 소개</Link>
               <Link to="/material" className="px-8 py-4 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-2xl font-black text-center text-sm hover:bg-white/20 transition-all">학술 자료실</Link>

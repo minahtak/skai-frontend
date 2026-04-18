@@ -44,26 +44,43 @@ const About: React.FC = () => {
         <meta property="og:description" content="Connecting Scholars, Empowering Journeys. SKAI를 소개합니다." />
         <meta property="og:image" content="https://skaisrael.com/logo3.png" />
       </Helmet>
-      
+
       <div className="min-h-screen text-zinc-900 font-sans selection:bg-blue-900 selection:text-white pb-24">
-        
+
         {/* Hero Section */}
-        <section className="pt-32 pb-20 px-6 max-w-5xl mx-auto text-center space-y-8">
+        <section className="pt-32 pb-20 px-6 max-w-4xl mx-auto text-center space-y-8">
           <div className="inline-flex items-center gap-3">
             <div className="h-px w-8 bg-blue-600"></div>
             <span className="text-xs font-semibold text-indigo-600 uppercase tracking-[0.2em]">
-              Mission & Vision
+              About SKAI
             </span>
             <div className="h-px w-8 bg-blue-600"></div>
           </div>
+
           <h1 className="text-5xl md:text-7xl tracking-tight text-zinc-900 leading-[1.1]">
             Connecting Scholars,<br />
             <span className="font-semibold text-indigo-700">Empowering Journeys.</span>
           </h1>
-          <p className="max-w-2xl mx-auto text-zinc-500 text-lg md:text-xl leading-relaxed mt-6">
-            이스라엘 내 한인 유학생들의 화합과 발전을 도모하며, <br className="hidden md:block" />
-            더 나은 학업과 생활 환경을 위해 함께 나아갑니다.
+
+          <p className="text-xs font-medium text-zinc-400 uppercase tracking-[0.2em]">
+            Student Korean Association in Israel
           </p>
+
+          <div className="w-8 h-px bg-zinc-200 mx-auto" />
+
+          <div className="max-w-2xl mx-auto text-left space-y-5">
+            <p className="text-zinc-500 text-base leading-relaxed">
+              SKAI는 이스라엘 내 한인 유학생들의 화합과 성장, 그리고 더 나은 미래를 위해 만들어진 학생회 플랫폼입니다.
+            </p>
+            <p className="text-zinc-500 text-base leading-relaxed">
+              이름은 히브리어 표현 "סטודנט קוריאני"(Korean Student)의 어순에서 착안한{' '}
+              <span className="font-semibold text-zinc-800">Student Korean Association in Israel</span>의 앞글자를 담아 탄생했습니다.
+              동시에 하늘처럼 넓고 높은 학생들의 꿈이 이스라엘에서 더욱 크게 펼쳐지기를 바라는 의미를 함께 담고 있습니다.
+            </p>
+            <p className="text-zinc-500 text-base leading-relaxed">
+              학업 정보, 생활 지원, 네트워킹, 그리고 서로를 연결하는 커뮤니티를 통해 낯선 타지에서도 함께 성장할 수 있는 환경을 만들어갑니다.
+            </p>
+          </div>
         </section>
 
         {/* Executives Section */}
@@ -92,10 +109,10 @@ const About: React.FC = () => {
                 >
                   {/* Photo (갤러리 방식 + 이니셜 Fallback 적용) */}
                   <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden mb-6 transition-transform duration-500 group-hover:scale-105 bg-zinc-100 shadow-sm border border-zinc-200">
-                    <img 
-                      src={person.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=random`} 
-                      alt={person.name} 
-                      className="w-full h-full object-cover transition-all duration-500" 
+                    <img
+                      src={person.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=random`}
+                      alt={person.name}
+                      className="w-full h-full object-cover transition-all duration-500"
                       onError={(e) => (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=random&color=fff`}
                     />
                   </div>
@@ -131,10 +148,10 @@ const About: React.FC = () => {
                 >
                   {/* Photo (갤러리 방식 + 이니셜 Fallback 적용) */}
                   <div className="relative w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden mb-5 transition-transform duration-500 group-hover:scale-105 bg-zinc-100 shadow-sm border border-zinc-200">
-                    <img 
-                      src={person.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=random`} 
-                      alt={person.name} 
-                      className="w-full h-full object-cover transition-all duration-500" 
+                    <img
+                      src={person.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=random`}
+                      alt={person.name}
+                      className="w-full h-full object-cover transition-all duration-500"
                       onError={(e) => (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name)}&background=random&color=fff`}
                     />
                   </div>

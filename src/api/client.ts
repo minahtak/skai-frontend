@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // 백엔드 주소 (본인 환경에 맞게 수정)
 // const BASE_URL = 'http://localhost:8080/api';
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 const client = axios.create({
     baseURL: BASE_URL,
