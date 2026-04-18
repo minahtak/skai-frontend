@@ -1,8 +1,9 @@
+/// <reference types="vite/client" />
 import axios from 'axios';
 
 // 백엔드 주소 (본인 환경에 맞게 수정)
 // const BASE_URL = 'http://localhost:8080/api';
-const BASE_URL = 'https://port-0-korean-association-mmb2q9eid720c7d4.sel3.cloudtype.app/api';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const client = axios.create({
     baseURL: BASE_URL,

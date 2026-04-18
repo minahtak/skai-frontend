@@ -32,7 +32,7 @@ const Home: React.FC<HomeProps> = ({ notices, infos }) => {
         <title>SKAI | 이스라엘 한인 학생회</title>
         <meta name="description" content="이스라엘 유학의 모든 것. 한인 학생회 공지, 학술 자료, 이스라엘 맛집 및 생활 가이드를 제공합니다." />
         <meta property="og:title" content="SKAI | 이스라엘 한인 학생회" />
-        <meta property="og:description" content="이스라엘 유학생을 위한 학술 아카이브와 정착 가이드!" />
+        <meta property="og:description" content="이스라엘 유학생을 위한 학술 아카이브와 정착 가이드" />
         <meta property="og:url" content="https://skaisrael.com" />
       </Helmet>
       {/* Hero Section */}
