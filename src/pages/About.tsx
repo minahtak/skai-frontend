@@ -42,7 +42,9 @@ const About: React.FC = () => {
         <meta name="keywords" content="이스라엘 한인 학생회 소개, SKAI 임원진, 이스라엘 유학생 모임" />
         <meta property="og:title" content="SKAI 소개 | 이스라엘 한인 학생회" />
         <meta property="og:description" content="Connecting Scholars, Empowering Journeys. SKAI를 소개합니다." />
-        <meta property="og:image" content="https://skaisrael.com/logo3.png" />
+        <meta property="og:image"
+          content="https://images.unsplash.com/photo-1544971587-b842c27f8e14?auto=format&fit=crop&q=80&w=1200" />
+
       </Helmet>
 
       <div className="min-h-screen text-zinc-900 font-sans selection:bg-blue-900 selection:text-white pb-24">

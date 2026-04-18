@@ -100,10 +100,10 @@ const InfoDetail: React.FC = () => {
   
   // 2. 본문에 삽입된 첫 번째 이미지 태그의 src 추출 (없으면 기본 로고)
   const imgMatch = info.content.match(/<img[^>]+src="([^">]+)"/);
-  const ogImage = imgMatch ? imgMatch[1] : 'https://구매할도매인.com/logo3.png'; 
+  const ogImage = imgMatch ? imgMatch[1] : 'https://skaisrael.com/logo3.png'; 
   
   // 3. 현재 페이지의 URL (카톡 클릭 시 이동할 주소)
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : `https://구매할도매인.com/info/${id}`;
+  const currentUrl = typeof window !== 'undefined' ? window.location.href : `https://skaisrael.com/info/${id}`;
 
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 pb-32">
