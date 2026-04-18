@@ -161,7 +161,7 @@ const GalleryList: React.FC<GalleryProps> = ({ user }) => {
         <meta name="keywords" content="이스라엘 유학 생활, 학생회 행사, SKAI 갤러리, 이스라엘 사진" />
         <meta property="og:title" content="SKAI 갤러리 | 이스라엘 한인 학생회" />
         <meta property="og:description" content="이스라엘 유학 생활의 생생한 기록과 학생회 활동 사진 모음" />
-        <meta property="og:image" content="https://skaisrael.com/logo3.png" />
+        <meta property="og:image" content="https://images.unsplash.com/photo-1544971587-b842c27f8e14?auto=format&fit=crop&q=80&w=1200" />
       </Helmet>
 
       <div className="space-y-12 pb-12">
