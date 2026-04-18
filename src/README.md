@@ -4,7 +4,7 @@
 
 # 🇮🇱 SKAI | 이스라엘 한인 학생회 공식 웹사이트
 
-이스라엘 내 한국인 유학생들의 학술적 성장과 안정적인 정착을 지원하는 자치 기구, **SKAI(Korean Student Association in Israel)**의 공식 웹 플랫폼입니다. 공지사항, 생활 가이드, 활동 갤러리, 학술 자료실 등 유학생들에게 필요한 핵심 정보를 제공합니다.
+이스라엘 내 한국인 유학생들의 학술적 성장과 안정적인 정착을 지원하는 자치 기구, **SKAI(Student Korean Association in Israel)**의 공식 웹 플랫폼입니다. 공지사항, 생활 가이드, 활동 갤러리, 학술 자료실 등 유학생들에게 필요한 핵심 정보를 제공합니다.
 
 ## 🛠 Tech Stack (기술 스택)
 - **Frontend:** React, TypeScript, Tailwind CSS 
