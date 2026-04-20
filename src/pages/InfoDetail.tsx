@@ -103,6 +103,9 @@ const InfoDetail: React.FC = () => {
   const ogImage = imgMatch ? imgMatch[1] : 'https://skaisrael.com/logo3.png'; 
   const currentUrl = typeof window !== 'undefined' ? window.location.href : `https://skaisrael.com/info/${id}`;
 
+  // ★ 핵심 1: 백엔드에서 온 데이터 중 내용이 비어있는 <p></p>를 찾아서 <p><br></p>로 변경 (줄바꿈 유지)
+  const formattedContent = info.content.replace(/<p><\/p>/g, '<p><br></p>');
+
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 pb-32">
       {/* 상단 네비게이션 */}
@@ -171,11 +174,11 @@ const InfoDetail: React.FC = () => {
             </div>
           </header>
 
-          {/* ★ 변경된 부분: ql-snow 와 ql-editor 를 사용하여 에디터 스타일 적용 */}
+          {/* ★ 핵심 2: ql-snow와 ql-editor를 유지하면서 Tailwind의 prose 클래스를 조합해 디자인 복구 */}
           <div className="ql-snow">
             <div
-              className="ql-editor !p-0"
-              dangerouslySetInnerHTML={{ __html: info.content }}
+              className="ql-editor prose prose-slate prose-lg max-w-none prose-headings:font-black prose-a:text-indigo-600 prose-ul:list-disc !p-0"
+              dangerouslySetInnerHTML={{ __html: formattedContent }}
             ></div>
           </div>
 
