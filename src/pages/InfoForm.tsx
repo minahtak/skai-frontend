@@ -48,20 +48,22 @@ const InfoForm: React.FC<InfoFormProps> = ({ user }) => {
     useEffect(() => {
         if (isEditMode && id) {
             const fetchInfo = async () => {
-                const data = await api.getInfoDetail(id);
+                try {
+                    const data = await api.getInfoDetail(id);
 
-
-                // ★ 1. F12 개발자 도구 콘솔을 열어서 백엔드가 주는 실제 필드명을 확인하세요!
-                console.log("백엔드에서 온 데이터:", data);
-
-                if (data) {
-                    setFormData({
-                        title: data.title,
-                        category: data.category,
-                        schoolTag: data.schoolTag || 'ALL',
-                        targetTag: data.targetTag || '',
-                        content: data.content
-                    });
+                    if (data) {
+                        // ★ 이전 상태(prev)를 기반으로 확실하게 덮어씌워 줍니다.
+                        setFormData(prev => ({
+                            ...prev,
+                            title: data.title || '',
+                            category: data.category || 'LIFE',
+                            schoolTag: data.schoolTag || 'ALL',
+                            targetTag: data.targetTag || '',
+                            content: data.content || ''
+                        }));
+                    }
+                } catch (error) {
+                    console.error("데이터를 불러오는 중 오류 발생:", error);
                 }
             };
             fetchInfo();

@@ -175,7 +175,6 @@ const InfoDetail: React.FC = () => {
           <div className="ql-snow">
             <div
               className="ql-editor !p-0"
-              style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
               dangerouslySetInnerHTML={{ __html: info.content }}
             ></div>
           </div>
