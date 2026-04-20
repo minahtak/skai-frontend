@@ -24,6 +24,13 @@ const GalleryList: React.FC<GalleryProps> = ({ user }) => {
   const [commentText, setCommentText] = useState("");
   const [replyTarget, setReplyTarget] = useState<number | null>(null);
 
+  // ★ 추가된 부분: 기존 R2 도메인을 새 CDN 도메인으로 자동 변환하는 함수
+  const formatImageUrl = (url?: string) => {
+    if (!url) return 'https://via.placeholder.com/300?text=No+Image';
+    // 정규식을 사용해 https://pub-어쩌구.r2.dev 형태를 모두 찾아 변경
+    return url.replace(/https:\/\/pub-[^/]+\.r2\.dev/g, 'https://cdn.skaisrael.com');
+  };
+
   // 데이터 불러오기 (정렬 옵션이 바뀌면 다시 실행됨)
   const fetchGalleries = async () => {
     setLoading(true);
@@ -209,8 +216,9 @@ const GalleryList: React.FC<GalleryProps> = ({ user }) => {
                 className="relative aspect-square overflow-hidden cursor-pointer rounded-2xl border border-slate-100 group shadow-sm bg-white"
                 onClick={() => openAlbum(item)}
               >
+                {/* ★ 수정된 부분: 리스트 썸네일 */}
                 <img
-                  src={item.images?.[0] || 'https://via.placeholder.com/300'}
+                  src={formatImageUrl(item.images?.[0])}
                   alt={item.title}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   onError={(e) => (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300?text=No+Image'}
@@ -236,14 +244,12 @@ const GalleryList: React.FC<GalleryProps> = ({ user }) => {
           </div>
         )}
 
-        {/* --- 상세 보기 모달 --- */}
         {selectedAlbum && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md" onClick={() => setSelectedAlbum(null)}></div>
 
             <div className="relative bg-white w-full max-w-5xl rounded-[3rem] overflow-hidden flex flex-col md:flex-row h-[78vh] shadow-2xl">
 
-              {/* 왼쪽: 이미지 슬라이더 */}
               <div className="flex-grow bg-slate-100 flex items-center justify-center px-6 py-3 md:px-8 md:py-4 relative min-h-[400px]">
                 {selectedAlbum.images && selectedAlbum.images.length > 1 && (
                   <>
@@ -256,8 +262,9 @@ const GalleryList: React.FC<GalleryProps> = ({ user }) => {
                   </>
                 )}
                 <div className="w-full aspect-square md:w-[550px] md:h-[550px] md:aspect-auto max-w-[550px] overflow-hidden rounded-2xl shadow-2xl bg-white flex-shrink-0">
+                  {/* ★ 수정된 부분: 모달 메인 이미지 */}
                   <img
-                    src={selectedAlbum.images[activeImageIdx]}
+                    src={formatImageUrl(selectedAlbum.images[activeImageIdx])}
                     className="w-full h-full object-cover animate-in fade-in duration-500"
                     alt="preview"
                   />
@@ -270,13 +277,13 @@ const GalleryList: React.FC<GalleryProps> = ({ user }) => {
                         onClick={() => setActiveImageIdx(idx)}
                         className={`w-14 h-14 rounded-xl overflow-hidden border-4 transition-all shrink-0 ${activeImageIdx === idx ? 'border-indigo-600 scale-110 shadow-lg' : 'border-transparent opacity-60'}`}
                       >
-                        <img src={img} className="w-full h-full object-cover" alt={`thumbnail-${idx}`} />
+                        {/* ★ 수정된 부분: 하단 작은 썸네일 */}
+                        <img src={formatImageUrl(img)} className="w-full h-full object-cover" alt={`thumbnail-${idx}`} />
                       </button>
                     ))}
                   </div>
                 )}
               </div>
-
               {/* 오른쪽: 정보 및 댓글 */}
               <div className="w-full md:w-[400px] flex flex-col h-full bg-white border-l border-slate-100">
                 <div className="p-8 border-b flex justify-between items-start bg-slate-50 shrink-0">
