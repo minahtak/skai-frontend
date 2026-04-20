@@ -10,16 +10,26 @@ interface InfoFormProps {
     user: User | null;
 }
 
+// ★ 공지사항과 동일하게 들여쓰기(indent) 등 툴바 옵션 추가
 const modules = {
     toolbar: [
         [{ 'header': [1, 2, false] }],
         ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
         ['link', 'image'],
         [{ 'color': [] }, { 'background': [] }],
         ['clean']
     ],
 };
+
+// ★ Formats 배열 추가 (NoticeForm과 동일)
+const formats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike', 'blockquote',
+    'list',
+    'indent',
+    'link', 'image', 'color', 'background'
+];
 
 const InfoForm: React.FC<InfoFormProps> = ({ user }) => {
     const { id } = useParams<{ id: string }>();
@@ -53,6 +63,10 @@ const InfoForm: React.FC<InfoFormProps> = ({ user }) => {
         }
     }, [id, isEditMode]);
 
+    const handleContentChange = (value: string) => {
+        setFormData({ ...formData, content: value });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const plainText = formData.content.replace(/<[^>]+>/g, '').trim();
@@ -83,7 +97,7 @@ const InfoForm: React.FC<InfoFormProps> = ({ user }) => {
             {/* ★ 봇 수집 거부 및 브라우저 탭 제목만 변경 */}
             <Helmet>
                 <title>{isEditMode ? '정보 수정' : '정보 공유'} | SKAI</title>
-                <meta name="robots" content="noindex, nofollow" /> {/* 검색엔진 봇 접근 차단 */}
+                <meta name="robots" content="noindex, nofollow" />
             </Helmet>
 
             <div className="max-w-4xl mx-auto py-12 px-4">
@@ -148,15 +162,16 @@ const InfoForm: React.FC<InfoFormProps> = ({ user }) => {
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-2">내용</label>
                             <div className="bg-white rounded-[2rem] overflow-hidden border border-slate-200">
+                                {/* ★ formats 속성 추가 및 onChange 핸들러 분리 적용 */}
                                 <ReactQuill
                                     theme="snow"
                                     value={formData.content}
-                                    onChange={(val) => setFormData({ ...formData, content: val })}
+                                    onChange={handleContentChange}
                                     modules={modules}
+                                    formats={formats}
                                     style={{ height: '400px' }}
                                 />
                             </div>
-                            {/* 툴바 공간 확보 */}
                             <div className="h-10 md:h-0"></div>
                         </div>
 

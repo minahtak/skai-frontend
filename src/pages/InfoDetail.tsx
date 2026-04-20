@@ -5,6 +5,9 @@ import { api } from '../api';
 import CommentSection from '../components/CommentSection';
 import { User, Info } from '../types';
 
+// ★ Quill 에디터의 CSS를 불러와야 본문 스타일(들여쓰기, 색상 등)이 제대로 렌더링됩니다.
+import 'react-quill-new/dist/quill.snow.css';
+
 const InfoDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -94,15 +97,10 @@ const InfoDetail: React.FC = () => {
     );
   }
 
-  // ★ SEO 및 Open Graph용 데이터 추출 (실무에서 자주 쓰는 방식)
-  // 1. HTML 태그 제거 후 순수 텍스트만 100자 추출 (Description용)
+  // SEO 및 Open Graph용 데이터 추출
   const plainTextDescription = info.content.replace(/<[^>]+>/g, '').substring(0, 100) + '...';
-  
-  // 2. 본문에 삽입된 첫 번째 이미지 태그의 src 추출 (없으면 기본 로고)
   const imgMatch = info.content.match(/<img[^>]+src="([^">]+)"/);
   const ogImage = imgMatch ? imgMatch[1] : 'https://skaisrael.com/logo3.png'; 
-  
-  // 3. 현재 페이지의 URL (카톡 클릭 시 이동할 주소)
   const currentUrl = typeof window !== 'undefined' ? window.location.href : `https://skaisrael.com/info/${id}`;
 
   return (
@@ -173,10 +171,13 @@ const InfoDetail: React.FC = () => {
             </div>
           </header>
 
-          <div
-            className="prose prose-slate prose-lg max-w-none prose-headings:font-black prose-a:text-indigo-600"
-            dangerouslySetInnerHTML={{ __html: info.content }}
-          ></div>
+          {/* ★ 변경된 부분: ql-snow 와 ql-editor 를 사용하여 에디터 스타일 적용 */}
+          <div className="ql-snow">
+            <div
+              className="ql-editor prose prose-slate prose-lg max-w-none prose-headings:font-black prose-a:text-indigo-600 !p-0"
+              dangerouslySetInnerHTML={{ __html: info.content }}
+            ></div>
+          </div>
 
           <div className="pt-10 flex gap-2">
             {info.schoolTag && <span className="px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-[11px] font-bold">#{info.schoolTag}</span>}
