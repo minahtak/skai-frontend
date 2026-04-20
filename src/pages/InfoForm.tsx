@@ -49,6 +49,11 @@ const InfoForm: React.FC<InfoFormProps> = ({ user }) => {
         if (isEditMode && id) {
             const fetchInfo = async () => {
                 const data = await api.getInfoDetail(id);
+
+
+                // ★ 1. F12 개발자 도구 콘솔을 열어서 백엔드가 주는 실제 필드명을 확인하세요!
+                console.log("백엔드에서 온 데이터:", data);
+
                 if (data) {
                     setFormData({
                         title: data.title,

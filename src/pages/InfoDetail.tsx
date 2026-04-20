@@ -174,7 +174,8 @@ const InfoDetail: React.FC = () => {
           {/* ★ 변경된 부분: ql-snow 와 ql-editor 를 사용하여 에디터 스타일 적용 */}
           <div className="ql-snow">
             <div
-              className="ql-editor prose prose-slate prose-lg max-w-none prose-headings:font-black prose-a:text-indigo-600 !p-0"
+              className="ql-editor !p-0"
+              style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
               dangerouslySetInnerHTML={{ __html: info.content }}
             ></div>
           </div>
