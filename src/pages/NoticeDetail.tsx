@@ -3,6 +3,9 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Notice, User, UserRole } from '../types';
 import { api } from '../api';
 
+// ★ Quill 에디터의 CSS를 불러와야 본문 스타일(들여쓰기, 색상 등)이 제대로 렌더링됩니다.
+import 'react-quill-new/dist/quill.snow.css';
+
 interface NoticeDetailProps {
   user: User | null; // 사용자 정보 필요 (권한 체크용)
 }
@@ -66,6 +69,9 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ user }) => {
 
   // 권한 체크: 관리자, 임원, 또는 본인 글인 경우
   const canEdit = user?.role === UserRole.ADMIN || user?.role === UserRole.STAFF || (user?.name === notice.writer);
+
+  // ★ 핵심: 백엔드에서 온 데이터 중 내용이 비어있는 <p></p>를 찾아서 <p><br></p>로 변경 (줄바꿈 유지)
+  const formattedContent = notice.content.replace(/<p><\/p>/g, '<p><br></p>');
 
   return (
     <div className="max-w-4xl mx-auto py-12 px-4 pb-32">
@@ -137,11 +143,13 @@ const NoticeDetail: React.FC<NoticeDetailProps> = ({ user }) => {
             </div>
           </header>
 
-          {/* HTML 콘텐츠 렌더링 */}
-          <div
-            className="prose prose-slate prose-lg max-w-none prose-headings:font-black prose-a:text-indigo-600"
-            dangerouslySetInnerHTML={{ __html: notice.content }}
-          ></div>
+          {/* ★ 핵심: ql-snow와 ql-editor를 추가하고 변환된 formattedContent 렌더링 */}
+          <div className="ql-snow">
+            <div
+              className="ql-editor prose prose-slate prose-lg max-w-none prose-headings:font-black prose-a:text-indigo-600 prose-ul:list-disc !p-0"
+              dangerouslySetInnerHTML={{ __html: formattedContent }}
+            ></div>
+          </div>
         </div>
 
         {/* 하단 버튼 영역 */}
