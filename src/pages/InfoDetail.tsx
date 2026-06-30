@@ -172,8 +172,9 @@ const InfoDetail: React.FC = () => {
           </header>
 
           <div className="ql-snow">
+            {/* ★ 변경된 부분: prose-img 꼬리표들을 통해 에디터 내부 이미지 크기와 스타일을 예쁘게 강제 적용합니다. */}
             <div
-              className="ql-editor prose prose-slate prose-sm sm:prose-base md:prose-lg max-w-none prose-headings:font-black prose-a:text-indigo-600 prose-ul:list-disc !p-0"
+              className="ql-editor prose prose-slate prose-sm sm:prose-base md:prose-lg max-w-none prose-headings:font-black prose-a:text-indigo-600 prose-ul:list-disc prose-img:max-h-[400px] prose-img:w-auto prose-img:mx-auto prose-img:rounded-2xl prose-img:shadow-sm !p-0"
               dangerouslySetInnerHTML={{ __html: formattedContent }}
             ></div>
           </div>

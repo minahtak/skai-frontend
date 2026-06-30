@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
+import imageCompression from 'browser-image-compression'; // ★ 이미지 압축 모듈 추가
 import { api } from '../api';
 import { User } from '../types';
 
@@ -10,19 +11,7 @@ interface InfoFormProps {
     user: User | null;
 }
 
-// ★ 공지사항과 동일하게 들여쓰기(indent) 등 툴바 옵션 추가
-const modules = {
-    toolbar: [
-        [{ 'header': [1, 2, false] }],
-        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-        [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
-        ['link', 'image'],
-        [{ 'color': [] }, { 'background': [] }],
-        ['clean']
-    ],
-};
-
-// ★ Formats 배열 추가 (NoticeForm과 동일)
+// Formats 배열
 const formats = [
     'header',
     'bold', 'italic', 'underline', 'strike', 'blockquote',
@@ -35,6 +24,9 @@ const InfoForm: React.FC<InfoFormProps> = ({ user }) => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const isEditMode = Boolean(id);
+    
+    // ★ 에디터 객체 접근용 Ref 추가 (타입 에러 방지용 any)
+    const quillRef = useRef<any>(null); 
 
     const [formData, setFormData] = useState({
         title: '',
@@ -52,7 +44,6 @@ const InfoForm: React.FC<InfoFormProps> = ({ user }) => {
                     const data = await api.getInfoDetail(id);
 
                     if (data) {
-                        // ★ 이전 상태(prev)를 기반으로 확실하게 덮어씌워 줍니다.
                         setFormData(prev => ({
                             ...prev,
                             title: data.title || '',
@@ -70,6 +61,71 @@ const InfoForm: React.FC<InfoFormProps> = ({ user }) => {
         }
     }, [id, isEditMode]);
 
+    // ★ 커스텀 이미지 핸들러와 모듈 설정을 하나로 묶어 적용
+    const modules = useMemo(() => {
+        const imageHandler = () => {
+            const input = document.createElement('input');
+            input.setAttribute('type', 'file');
+            input.setAttribute('accept', 'image/*');
+            input.click();
+
+            input.onchange = async () => {
+                const file = input.files?.[0];
+                if (!file) return;
+
+                const options = {
+                    maxSizeMB: 0.2, 
+                    maxWidthOrHeight: 1280,
+                    useWebWorker: true,
+                };
+                
+                let uploadFile = file;
+                try {
+                    uploadFile = await imageCompression(file, options);
+                } catch (err) {
+                    console.error("압축 실패, 원본 사용", err);
+                }
+
+                try {
+                    const presignedData = await api.getPresignedUrl(uploadFile.name, uploadFile.type);
+                    if (!presignedData) throw new Error("업로드 URL 발급 실패");
+
+                    const success = await api.uploadImageToR2(presignedData.uploadUrl, uploadFile);
+                    if (!success) throw new Error("이미지 업로드 실패");
+
+                    const modifiedUrl = presignedData.fileUrl.replace(/https:\/\/pub-[^/]+\.r2\.dev/g, 'https://cdn.skaisrael.com');
+
+                    const editor = quillRef.current?.getEditor();
+                    if (editor) {
+                        const range = editor.getSelection();
+                        const index = range ? range.index : editor.getLength();
+                        editor.insertEmbed(index, 'image', modifiedUrl);
+                        editor.setSelection(index + 1); 
+                    }
+                } catch (error) {
+                    console.error("에디터 이미지 업로드 실패:", error);
+                    alert("이미지 업로드 중 오류가 발생했습니다.");
+                }
+            };
+        };
+
+        return {
+            toolbar: {
+                container: [
+                    [{ 'header': [1, 2, false] }],
+                    ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                    [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+                    ['link', 'image'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    ['clean']
+                ],
+                handlers: {
+                    image: imageHandler 
+                }
+            }
+        };
+    }, []);
+
     const handleContentChange = (value: string) => {
         setFormData({ ...formData, content: value });
     };
@@ -79,7 +135,13 @@ const InfoForm: React.FC<InfoFormProps> = ({ user }) => {
         const plainText = formData.content.replace(/<[^>]+>/g, '').trim();
 
         if (!formData.title.trim()) return alert("제목을 입력해주세요.");
-        if (plainText.length === 0) return alert("내용을 입력해주세요.");
+        // ★ 이미지만 있는 게시글도 허용하도록 조건 수정
+        if (plainText.length === 0 && !formData.content.includes('<img')) return alert("내용을 입력해주세요.");
+
+        // ★ Base64 데이터(드래그/복붙) 전송 원천 차단 로직 추가
+        if (formData.content.includes('data:image/')) {
+            return alert("이미지가 서버에 정상 업로드되지 않고 본문에 거대하게 임시 삽입되었습니다. 이미지를 지우고 상단 툴바의 이미지 아이콘을 눌러 다시 추가해주세요. (드래그 앤 드롭이나 복사 붙여넣기는 지원하지 않습니다.)");
+        }
 
         let success = false;
         try {
@@ -101,7 +163,6 @@ const InfoForm: React.FC<InfoFormProps> = ({ user }) => {
 
     return (
         <>
-            {/* ★ 봇 수집 거부 및 브라우저 탭 제목만 변경 */}
             <Helmet>
                 <title>{isEditMode ? '정보 수정' : '정보 공유'} | SKAI</title>
                 <meta name="robots" content="noindex, nofollow" />
@@ -116,7 +177,6 @@ const InfoForm: React.FC<InfoFormProps> = ({ user }) => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* 설정 영역 */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-6 rounded-[2rem]">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-1">카테고리</label>
@@ -169,12 +229,12 @@ const InfoForm: React.FC<InfoFormProps> = ({ user }) => {
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-2">내용</label>
                             <div className="bg-white rounded-[2rem] overflow-hidden border border-slate-200">
-                                {/* ★ formats 속성 추가 및 onChange 핸들러 분리 적용 */}
                                 <ReactQuill
+                                    ref={quillRef} // ★ 참조 연결
                                     theme="snow"
                                     value={formData.content}
                                     onChange={handleContentChange}
-                                    modules={modules}
+                                    modules={modules} // ★ 업데이트된 modules 연결
                                     formats={formats}
                                     style={{ height: '400px' }}
                                 />
