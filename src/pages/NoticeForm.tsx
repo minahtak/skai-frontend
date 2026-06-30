@@ -1,25 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import ReactQuill from 'react-quill-new'; // ★ 에디터 불러오기
-import 'react-quill-new/dist/quill.snow.css'; // ★ 스타일 불러오기
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+import imageCompression from 'browser-image-compression'; // 이미지 압축용 추가
 import { api } from '../api';
 import { User } from '../types';
 
 interface NoticeFormProps {
     user: User | null;
 }
-
-// ★ 에디터 툴바 설정 (제목, 굵게, 색상, 링크, 이미지 등)
-const modules = {
-    toolbar: [
-        [{ 'header': [1, 2, false] }],
-        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-        [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
-        ['link', 'image'],
-        [{ 'color': [] }, { 'background': [] }],
-        ['clean']
-    ],
-};
 
 const formats = [
     'header',
@@ -33,13 +22,15 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const isEditMode = Boolean(id);
+    const quillRef = useRef<InstanceType<typeof ReactQuill>>(null) 
+    
 
     const [formData, setFormData] = useState({
         title: '',
         category: 'Official',
-        customCategory: '', // 분류 직접 입력값
+        customCategory: '',
         targetSchool: 'All',
-        customTargetSchool: '', // 학교 직접 입력값
+        customTargetSchool: '',
         content: '',
         pinned: false
     });
@@ -50,20 +41,18 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
             const fetchNotice = async () => {
                 const data = await api.getNoticeDetail(Number(id));
                 if (data) {
-                    // ★ 기본 옵션 목록 정의
                     const defaultSchools = ['All', '히브리대', '텔아비브대', '테크니온', '바일란대'];
                     const defaultCategories = ['Official', 'Event', 'Visa'];
 
-                    // ★ 백엔드 값이 기본 옵션에 없으면 '기타(Etc)'로 간주
                     const isCustomSchool = !defaultSchools.includes(data.targetSchool);
                     const isCustomCategory = !defaultCategories.includes(data.category);
 
                     setFormData({
                         title: data.title,
                         category: isCustomCategory ? 'Etc' : data.category,
-                        customCategory: isCustomCategory ? data.category : '', // 직접 입력 칸에 기존 값 세팅
+                        customCategory: isCustomCategory ? data.category : '',
                         targetSchool: isCustomSchool ? '기타' : data.targetSchool,
-                        customTargetSchool: isCustomSchool ? data.targetSchool : '', // 직접 입력 칸에 기존 값 세팅
+                        customTargetSchool: isCustomSchool ? data.targetSchool : '',
                         content: data.content,
                         pinned: data.pinned || false
                     });
@@ -73,33 +62,96 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
         }
     }, [id, isEditMode]);
 
-    // ★ 내용 변경 핸들러 (Quill용)
+    // ★ 에디터 이미지 업로드 커스텀 핸들러
+    const imageHandler = () => {
+        const input = document.createElement('input');
+        input.setAttribute('type', 'file');
+        input.setAttribute('accept', 'image/*');
+        input.click();
+
+        input.onchange = async () => {
+            const file = input.files?.[0];
+            if (!file) return;
+
+            // 1. 이미지 압축 (GalleryForm과 동일 로직)
+            const options = {
+                maxSizeMB: 0.2, // 에디터 내부용이므로 조금 넉넉하게 조정 가능
+                maxWidthOrHeight: 1280,
+                useWebWorker: true,
+            };
+            
+            let uploadFile = file;
+            try {
+                uploadFile = await imageCompression(file, options);
+            } catch (err) {
+                console.error("압축 실패, 원본 사용", err);
+            }
+
+            try {
+                // 2. Presigned URL 발급 및 R2 업로드
+                const presignedData = await api.getPresignedUrl(uploadFile.name, uploadFile.type);
+                if (!presignedData) throw new Error("업로드 URL 발급 실패");
+
+                const success = await api.uploadImageToR2(presignedData.uploadUrl, uploadFile);
+                if (!success) throw new Error("이미지 업로드 실패");
+
+                // 3. CDN 주소로 치환
+                const modifiedUrl = presignedData.fileUrl.replace(/https:\/\/pub-[^/]+\.r2\.dev/g, 'https://cdn.skaisrael.com');
+
+                // 4. 에디터 현재 커서 위치에 이미지 URL 삽입
+                const editor = quillRef.current?.getEditor();
+                if (editor) {
+                    const range = editor.getSelection();
+                    if (range) {
+                        editor.insertEmbed(range.index, 'image', modifiedUrl);
+                        editor.setSelection(range.index + 1); // 커서를 이미지 다음으로 이동
+                    }
+                }
+            } catch (error) {
+                console.error("에디터 이미지 업로드 실패:", error);
+                alert("이미지 업로드 중 오류가 발생했습니다.");
+            }
+        };
+    };
+
+    // ★ modules 설정에 imageHandler 바인딩 (컴포넌트 리렌더링 시 무한 루프 방지를 위해 useMemo 사용)
+    const modules = useMemo(() => ({
+        toolbar: {
+            container: [
+                [{ 'header': [1, 2, false] }],
+                ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+                ['link', 'image'],
+                [{ 'color': [] }, { 'background': [] }],
+                ['clean']
+            ],
+            handlers: {
+                image: imageHandler // 이미지 버튼 클릭 시 커스텀 핸들러 작동
+            }
+        }
+    }), []);
+
     const handleContentChange = (value: string) => {
         setFormData({ ...formData, content: value });
     };
 
-    // 저장 함수
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // 유효성 검사 (HTML 태그 제거하고 비어있는지 체크)
         const plainText = formData.content.replace(/<[^>]+>/g, '').trim();
-
-        // ★ 최종적으로 보낼 값 결정
         const finalSchool = formData.targetSchool === '기타' ? formData.customTargetSchool.trim() : formData.targetSchool;
         const finalCategory = formData.category === 'Etc' ? formData.customCategory.trim() : formData.category;
 
         if (!formData.title.trim()) return alert("제목을 입력해주세요.");
-        if (plainText.length === 0) return alert("내용을 입력해주세요.");
+        if (plainText.length === 0 && !formData.content.includes('<img')) return alert("내용을 입력해주세요."); // 이미지 있을 때 패스되도록 수정
         if (formData.targetSchool === '기타' && !finalSchool) return alert("대상 학교를 직접 입력해주세요.");
         if (formData.category === 'Etc' && !finalCategory) return alert("분류를 직접 입력해주세요.");
 
         let success = false;
         try {
-            // ★ 백엔드 DTO(NoticeFormDto) 형식에 맞게 데이터 변환  
             const payload = {
                 title: formData.title,
-                content: formData.content,
+                content: formData.content, // 이제 이 내용 안에 가벼운 CDN 이미지 링크 주소만 들어갑니다.
                 category: finalCategory,      
                 targetSchool: finalSchool,    
                 isPinned: formData.pinned
@@ -124,21 +176,15 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
     return (
         <div className="max-w-4xl mx-auto py-12">
             <div className="bg-white p-10 md:p-14 rounded-[3rem] border border-slate-100 shadow-xl space-y-8">
-
                 <div className="text-center space-y-2 mb-8">
                     <h1 className="text-3xl font-black text-slate-900">
                         {isEditMode ? '공지사항 수정' : '공지사항 작성'}
                     </h1>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
-
-                    </p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-
-                    {/* 설정 영역 */}
+                    {/* 설정 영역 (생략 없이 기존 UI 유지) */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-6 rounded-[2rem]">
-                        {/* 설정 영역 내부 대상 학교 & 분류 부분 교체 */}
                         <div className="space-y-4">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">대상 학교</label>
                             <select
@@ -154,7 +200,6 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
                                 <option value="기타">기타 (직접 입력)</option>
                             </select>
 
-                            {/* ★ 대상 학교 '기타' 선택 시 나타나는 입력창 */}
                             {formData.targetSchool === '기타' && (
                                 <input
                                     type="text"
@@ -180,7 +225,6 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
                                 <option value="Etc">기타 (직접 입력)</option>
                             </select>
 
-                            {/* ★ 분류 'Etc' 선택 시 나타나는 입력창 */}
                             {formData.category === 'Etc' && (
                                 <input
                                     type="text"
@@ -207,7 +251,7 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
                         </div>
                     </div>
 
-                    {/* 제목 */}
+                    {/* 제목 영역 */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-2">제목</label>
                         <input
@@ -219,24 +263,24 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
                         />
                     </div>
 
-                    {/* ★ React Quill 에디터 적용 영역 */}
+                    {/* 에디터 영역 */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-2">내용</label>
                         <div className="bg-white rounded-[2rem] overflow-hidden border border-slate-200">
                             <ReactQuill
+                                ref={quillRef} // ★ ref 등록
                                 theme="snow"
                                 value={formData.content}
                                 onChange={handleContentChange}
-                                modules={modules}
+                                modules={modules} // ★ 업데이트된 modules 적용
                                 formats={formats}
-                                style={{ height: '400px' }} // 에디터 높이 설정
+                                style={{ height: '400px' }}
                             />
                         </div>
-                        {/* 에디터 툴바 공간 때문에 약간의 여백 추가 */}
                         <div className="h-10 md:h-0"></div>
                     </div>
 
-                    {/* 버튼 */}
+                    {/* 버튼 영역 */}
                     <div className="flex justify-end gap-3 pt-8">
                         <button
                             type="button"
@@ -252,7 +296,6 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
                             {isEditMode ? '수정 완료' : '공지 등록'}
                         </button>
                     </div>
-
                 </form>
             </div>
         </div>
