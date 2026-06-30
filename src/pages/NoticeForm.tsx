@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-import imageCompression from 'browser-image-compression'; // 이미지 압축용 추가
+import imageCompression from 'browser-image-compression'; 
 import { api } from '../api';
 import { User } from '../types';
 
@@ -22,8 +22,9 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const isEditMode = Boolean(id);
-    const quillRef = useRef<InstanceType<typeof ReactQuill>>(null) 
     
+    // TypeScript 네임스페이스 에러 우회를 위해 any 타입 적용
+    const quillRef = useRef<any>(null); 
 
     const [formData, setFormData] = useState({
         title: '',
@@ -35,7 +36,6 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
         pinned: false
     });
 
-    // 수정 시 데이터 불러오기
     useEffect(() => {
         if (isEditMode && id) {
             const fetchNotice = async () => {
@@ -62,74 +62,71 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
         }
     }, [id, isEditMode]);
 
-    // ★ 에디터 이미지 업로드 커스텀 핸들러
-    const imageHandler = () => {
-        const input = document.createElement('input');
-        input.setAttribute('type', 'file');
-        input.setAttribute('accept', 'image/*');
-        input.click();
+    // ★ modules와 imageHandler를 하나로 묶어 클로저 및 초기화 문제 완벽 해결
+    const modules = useMemo(() => {
+        const imageHandler = () => {
+            const input = document.createElement('input');
+            input.setAttribute('type', 'file');
+            input.setAttribute('accept', 'image/*');
+            input.click();
 
-        input.onchange = async () => {
-            const file = input.files?.[0];
-            if (!file) return;
+            input.onchange = async () => {
+                const file = input.files?.[0];
+                if (!file) return;
 
-            // 1. 이미지 압축 (GalleryForm과 동일 로직)
-            const options = {
-                maxSizeMB: 0.2, // 에디터 내부용이므로 조금 넉넉하게 조정 가능
-                maxWidthOrHeight: 1280,
-                useWebWorker: true,
-            };
-            
-            let uploadFile = file;
-            try {
-                uploadFile = await imageCompression(file, options);
-            } catch (err) {
-                console.error("압축 실패, 원본 사용", err);
-            }
-
-            try {
-                // 2. Presigned URL 발급 및 R2 업로드
-                const presignedData = await api.getPresignedUrl(uploadFile.name, uploadFile.type);
-                if (!presignedData) throw new Error("업로드 URL 발급 실패");
-
-                const success = await api.uploadImageToR2(presignedData.uploadUrl, uploadFile);
-                if (!success) throw new Error("이미지 업로드 실패");
-
-                // 3. CDN 주소로 치환
-                const modifiedUrl = presignedData.fileUrl.replace(/https:\/\/pub-[^/]+\.r2\.dev/g, 'https://cdn.skaisrael.com');
-
-                // 4. 에디터 현재 커서 위치에 이미지 URL 삽입
-                const editor = quillRef.current?.getEditor();
-                if (editor) {
-                    const range = editor.getSelection();
-                    if (range) {
-                        editor.insertEmbed(range.index, 'image', modifiedUrl);
-                        editor.setSelection(range.index + 1); // 커서를 이미지 다음으로 이동
-                    }
+                const options = {
+                    maxSizeMB: 0.2, 
+                    maxWidthOrHeight: 1280,
+                    useWebWorker: true,
+                };
+                
+                let uploadFile = file;
+                try {
+                    uploadFile = await imageCompression(file, options);
+                } catch (err) {
+                    console.error("압축 실패, 원본 사용", err);
                 }
-            } catch (error) {
-                console.error("에디터 이미지 업로드 실패:", error);
-                alert("이미지 업로드 중 오류가 발생했습니다.");
+
+                try {
+                    const presignedData = await api.getPresignedUrl(uploadFile.name, uploadFile.type);
+                    if (!presignedData) throw new Error("업로드 URL 발급 실패");
+
+                    const success = await api.uploadImageToR2(presignedData.uploadUrl, uploadFile);
+                    if (!success) throw new Error("이미지 업로드 실패");
+
+                    const modifiedUrl = presignedData.fileUrl.replace(/https:\/\/pub-[^/]+\.r2\.dev/g, 'https://cdn.skaisrael.com');
+
+                    const editor = quillRef.current?.getEditor();
+                    if (editor) {
+                        const range = editor.getSelection();
+                        // 현재 커서 위치가 있으면 거기에 넣고, 없으면 본문 맨 끝에 삽입
+                        const index = range ? range.index : editor.getLength();
+                        editor.insertEmbed(index, 'image', modifiedUrl);
+                        editor.setSelection(index + 1); 
+                    }
+                } catch (error) {
+                    console.error("에디터 이미지 업로드 실패:", error);
+                    alert("이미지 업로드 중 오류가 발생했습니다.");
+                }
+            };
+        };
+
+        return {
+            toolbar: {
+                container: [
+                    [{ 'header': [1, 2, false] }],
+                    ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                    [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+                    ['link', 'image'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    ['clean']
+                ],
+                handlers: {
+                    image: imageHandler 
+                }
             }
         };
-    };
-
-    // ★ modules 설정에 imageHandler 바인딩 (컴포넌트 리렌더링 시 무한 루프 방지를 위해 useMemo 사용)
-    const modules = useMemo(() => ({
-        toolbar: {
-            container: [
-                [{ 'header': [1, 2, false] }],
-                ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-                [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
-                ['link', 'image'],
-                [{ 'color': [] }, { 'background': [] }],
-                ['clean']
-            ],
-            handlers: {
-                image: imageHandler // 이미지 버튼 클릭 시 커스텀 핸들러 작동
-            }
-        }
-    }), []);
+    }, []);
 
     const handleContentChange = (value: string) => {
         setFormData({ ...formData, content: value });
@@ -143,7 +140,13 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
         const finalCategory = formData.category === 'Etc' ? formData.customCategory.trim() : formData.category;
 
         if (!formData.title.trim()) return alert("제목을 입력해주세요.");
-        if (plainText.length === 0 && !formData.content.includes('<img')) return alert("내용을 입력해주세요."); // 이미지 있을 때 패스되도록 수정
+        if (plainText.length === 0 && !formData.content.includes('<img')) return alert("내용을 입력해주세요."); 
+        
+        // ★ [핵심 추가] 실수로 복사/붙여넣기나 드래그로 Base64 데이터가 들어간 경우 서버 전송 전 차단
+        if (formData.content.includes('data:image/')) {
+            return alert("이미지가 서버에 정상 업로드되지 않고 본문에 거대하게 임시 삽입되었습니다. 이미지를 지우고 상단 툴바의 이미지 아이콘을 눌러 다시 추가해주세요. (드래그 앤 드롭이나 복사 붙여넣기는 지원하지 않습니다.)");
+        }
+
         if (formData.targetSchool === '기타' && !finalSchool) return alert("대상 학교를 직접 입력해주세요.");
         if (formData.category === 'Etc' && !finalCategory) return alert("분류를 직접 입력해주세요.");
 
@@ -151,7 +154,7 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
         try {
             const payload = {
                 title: formData.title,
-                content: formData.content, // 이제 이 내용 안에 가벼운 CDN 이미지 링크 주소만 들어갑니다.
+                content: formData.content, 
                 category: finalCategory,      
                 targetSchool: finalSchool,    
                 isPinned: formData.pinned
@@ -183,7 +186,7 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* 설정 영역 (생략 없이 기존 UI 유지) */}
+                    {/* 설정 영역 */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-6 rounded-[2rem]">
                         <div className="space-y-4">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">대상 학교</label>
@@ -204,7 +207,7 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
                                 <input
                                     type="text"
                                     placeholder="학교 이름을 입력하세요"
-                                    className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100 animate-in fade-in slide-in-from-top-2"
+                                    className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100"
                                     value={formData.customTargetSchool}
                                     onChange={e => setFormData({ ...formData, customTargetSchool: e.target.value })}
                                 />
@@ -229,7 +232,7 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
                                 <input
                                     type="text"
                                     placeholder="분류를 입력하세요"
-                                    className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100 animate-in fade-in slide-in-from-top-2"
+                                    className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-100"
                                     value={formData.customCategory}
                                     onChange={e => setFormData({ ...formData, customCategory: e.target.value })}
                                 />
@@ -268,11 +271,11 @@ const NoticeForm: React.FC<NoticeFormProps> = ({ user }) => {
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider ml-2">내용</label>
                         <div className="bg-white rounded-[2rem] overflow-hidden border border-slate-200">
                             <ReactQuill
-                                ref={quillRef} // ★ ref 등록
+                                ref={quillRef} 
                                 theme="snow"
                                 value={formData.content}
                                 onChange={handleContentChange}
-                                modules={modules} // ★ 업데이트된 modules 적용
+                                modules={modules} 
                                 formats={formats}
                                 style={{ height: '400px' }}
                             />
