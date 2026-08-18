@@ -1,6 +1,6 @@
 // src/types.ts
 
-// 1. 공통으로 사용할 댓글 구조 (Backend: Comment Entity)
+// 1. 공통으로 사용할 댓글 구조 (Backend: Comment Entity) 
 export interface Comment {
   id: number;
   writer: string;         // 백엔드: writer

@@ -262,7 +262,7 @@ const Election: React.FC = () => {
                                 <div className="flex flex-col items-center mb-8 text-center">
                                     <div className="w-32 h-32 rounded-full overflow-hidden mb-5 shadow-lg border-4 border-slate-50">
                                         <img
-                                            src={candidate.imageUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400"}
+                                            src={candidate.imageUrl || "https://i.namu.wiki/i/Q6BIqhZWqyhBAFmeZoOWIFO2Ttw1X0xOimLTY0WyohXIadIRIoxaAWc6yoggyEKohkI3aDCoKXsBlp6rvL-MFg.webp"}
                                             alt={candidate.name}
                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                         />
@@ -436,7 +436,7 @@ const Election: React.FC = () => {
                                                     {isSelected && <div className="w-2.5 h-2.5 bg-indigo-600 rounded-full"></div>}
                                                 </div>
                                                 <img
-                                                    src={candidate.imageUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400"}
+                                                    src={candidate.imageUrl || "https://i.namu.wiki/i/izVXkClWRy9-s5DAkC_lGo3za4Zy9seGH1V6AM0qZJzsckE9eWe6-Hp-1OvJm_DkVv7BL7U0Ar7QB89ApaklkQ.webp"}
                                                     alt={candidate.name}
                                                     className="w-11 h-11 rounded-full object-cover border"
                                                 />

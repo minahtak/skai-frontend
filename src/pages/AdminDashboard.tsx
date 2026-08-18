@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { User, Info, Executive, InfoStatus } from '../types';
+import { User, Info, Executive, Candidate } from '../types';
 import { api } from '../api';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // ★ 파일 업로드를 위해 추가
+
 
 interface AdminDashboardProps {
    user: User | null;
@@ -20,21 +20,33 @@ interface ExecutiveFormData {
    imageUrl: string;
 }
 
-// 구글 드라이브 이미지 변환
+interface CandidateFormData {
+   id?: number;
+   candidateNumber: number;
+   name: string;
+   school: string;
+   slogan: string;
+   pledges: string[];
+   imageUrl: string;
+}
+
 const getImageUrl = (url: string, name: string) => {
    if (!url) return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`;
    if (url.includes('drive.google.com')) {
       let id = '';
       const parts = url.split('/d/');
-      if (parts.length > 1) id = parts[1].split('/')[0];
-      else if (url.includes('id=')) {
+      if (parts.length > 1) {
+         id = parts[1].split('/')[0];       // ✅ parts[1]에서 잘라내기
+      } else if (url.includes('id=')) {
          const match = url.match(/id=([a-zA-Z0-9_-]+)/);
-         if (match) id = match[1];
+         if (match) id = match[1];          // ✅ 캡처 그룹만 꺼내기
       }
       if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
    }
    return url;
 };
+
+
 
 const formatDate = (dateString?: string | Date) => {
    if (!dateString) return '-';
@@ -43,10 +55,11 @@ const formatDate = (dateString?: string | Date) => {
 };
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }) => {
-   const [tab, setTab] = useState<'Content' | 'Users' | 'Executives'>('Content');
+   // ★ Candidates 탭 추가
+   const [tab, setTab] = useState<'Content' | 'Users' | 'Executives' | 'Candidates'>('Content');
    const [users, setUsers] = useState<User[]>([]);
    const [executives, setExecutives] = useState<Executive[]>([]);
-
+   const [candidates, setCandidates] = useState<Candidate[]>([]);
    const [pendingInfos, setPendingInfos] = useState<Info[]>([]);
 
    const navigate = useNavigate();
@@ -57,11 +70,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
    const [roleFilter, setRoleFilter] = useState('ALL');
    const [searchTerm, setSearchTerm] = useState('');
    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+   // 임원 모달 State
    const [isModalOpen, setIsModalOpen] = useState(false);
    const [modalMode, setModalMode] = useState<'PROMOTE' | 'EDIT'>('PROMOTE');
    const [formData, setFormData] = useState<ExecutiveFormData>({ role: '', name: '', school: '', intro: '', imageUrl: '' });
 
-   // ★ 파일 업로드용 상태 추가
+   // ★ 후보자 등록/수정 모달 State
+   const [isCandidateModalOpen, setIsCandidateModalOpen] = useState(false);
+   const [candidateModalMode, setCandidateModalMode] = useState<'CREATE' | 'EDIT'>('CREATE');
+   const [candidateFormData, setCandidateFormData] = useState<CandidateFormData>({
+      candidateNumber: 1,
+      name: '',
+      school: '',
+      slogan: '',
+      pledges: [''],
+      imageUrl: ''
+   });
+
+   // 파일 업로드 공통 상태
    const [selectedFile, setSelectedFile] = useState<File | null>(null);
    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
    const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,6 +105,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
 
          const execData = await api.admin.getExecutives();
          setExecutives(execData || []);
+
+         const candidateData = await api.admin.getCandidates();
+         setCandidates(candidateData || []);
 
          const pendingData = await api.getInfos({ status: 'PENDING', size: 100 });
          setPendingInfos(pendingData || []);
@@ -145,7 +175,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
       if (success) { alert("삭제되었습니다."); fetchData(page, roleFilter, searchTerm); }
    };
 
-   // ★ 모달 열 때 파일 관련 상태 초기화 추가
+   // 임원 모달 열기
    const openPromoteModal = (u: User) => {
       setModalMode('PROMOTE');
       setFormData({ memberId: u.id, name: u.name || '', school: u.school || '', role: '', intro: '', imageUrl: '' });
@@ -158,49 +188,97 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
       setModalMode('EDIT');
       setFormData({ id: e.id, memberId: e.member?.id || e.memberId, name: e.name, school: e.school, role: e.role, intro: e.intro, imageUrl: e.imageUrl });
       setSelectedFile(null);
-      setPreviewUrl(e.imageUrl || null); // 기존 이미지가 있으면 미리보기에 세팅
+      setPreviewUrl(e.imageUrl || null);
       setIsModalOpen(true);
    };
 
-   // ★ 파일 선택 시 미리보기 적용
+   // ★ 후보자 등록/수정 모달 핸들러
+   const openCreateCandidateModal = () => {
+      setCandidateModalMode('CREATE');
+      setCandidateFormData({
+         candidateNumber: candidates.length + 1,
+         name: '',
+         school: '',
+         slogan: '',
+         pledges: ['', '', ''],
+         imageUrl: ''
+      });
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setIsCandidateModalOpen(true);
+   };
+
+   const openEditCandidateModal = (c: Candidate) => {
+      setCandidateModalMode('EDIT');
+      setCandidateFormData({
+         id: Number(c.id),
+         candidateNumber: c.candidateNumber,
+         name: c.name,
+         school: c.school,
+         slogan: c.slogan || '',
+         pledges: c.pledges && c.pledges.length > 0 ? c.pledges : [''],
+         imageUrl: c.imageUrl || ''
+      });
+      setSelectedFile(null);
+      setPreviewUrl(c.imageUrl || null);
+      setIsCandidateModalOpen(true);
+   };
+
+   const handleDeleteCandidate = async (c: Candidate) => {
+      if (!window.confirm(`정말 [기호 ${c.candidateNumber}번 ${c.name}] 후보자를 삭제하시겠습니까?`)) return;
+      const success = await api.admin.deleteCandidate(Number(c.id));
+      if (success) {
+         alert("후보자가 삭제되었습니다.");
+         fetchData(page, roleFilter, searchTerm);
+      } else {
+         alert("삭제에 실패했습니다.");
+      }
+   };
+
+   // 공약 입력창 추가/제거
+   const handlePledgeChange = (index: number, value: string) => {
+      const newPledges = [...candidateFormData.pledges];
+      newPledges[index] = value;
+      setCandidateFormData({ ...candidateFormData, pledges: newPledges });
+   };
+
+   const addPledgeField = () => {
+      if (candidateFormData.pledges.length < 8) {
+         setCandidateFormData({ ...candidateFormData, pledges: [...candidateFormData.pledges, ''] });
+      }
+   };
+
+   const removePledgeField = (index: number) => {
+      const newPledges = candidateFormData.pledges.filter((_, i) => i !== index);
+      setCandidateFormData({ ...candidateFormData, pledges: newPledges });
+   };
+
    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
          setSelectedFile(file);
-         setPreviewUrl(URL.createObjectURL(file)); // 로컬 미리보기 URL 생성
+         setPreviewUrl(URL.createObjectURL(file));
       }
    };
 
-   // ★ 폼 전송 (갤러리와 동일한 api.ts 로직 사용)
+   // 임원 저장
    const handleModalSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       setIsSubmitting(true);
 
       try {
          let finalImageUrl = formData.imageUrl;
-
-         // 1. 선택된 새 파일이 있다면 갤러리 API를 통해 Cloudflare R2에 업로드
          if (selectedFile) {
-            // (1) Presigned URL 발급 
-            // 💡 api.ts의 getPresignedUrl 사용! (내부적으로 client를 써서 토큰이 포함되므로 403 에러 해결됨)
             const presignedData = await api.getPresignedUrl(selectedFile.name, selectedFile.type);
-            
             if (!presignedData) throw new Error("업로드 URL 발급 실패");
-
-            // (2) S3/R2로 직접 PUT 업로드 
-            // 💡 api.ts의 uploadImageToR2 사용! (내부적으로 기본 axios를 써서 R2에 안전하게 올라감)
             const uploadSuccess = await api.uploadImageToR2(presignedData.uploadUrl, selectedFile);
-            
             if (!uploadSuccess) throw new Error("이미지 업로드 실패");
-
-            // (3) 최종 발급된 R2 이미지 URL로 덮어쓰기
             finalImageUrl = presignedData.fileUrl;
          }
 
          const submitData = { ...formData, imageUrl: finalImageUrl };
          let success = false;
 
-         // 2. 백엔드로 DTO 전송 (이건 기존과 동일)
          if (modalMode === 'PROMOTE') {
             if (submitData.memberId) success = await api.admin.promoteMember(submitData);
          } else {
@@ -222,7 +300,55 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
       }
    };
 
+   // ★ 후보자 등록/수정 제출
+   const handleCandidateModalSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsSubmitting(true);
 
+      try {
+         let finalImageUrl = candidateFormData.imageUrl;
+         if (selectedFile) {
+            const presignedData = await api.getPresignedUrl(selectedFile.name, selectedFile.type);
+            if (!presignedData) throw new Error("업로드 URL 발급 실패");
+            const uploadSuccess = await api.uploadImageToR2(presignedData.uploadUrl, selectedFile);
+            if (!uploadSuccess) throw new Error("이미지 업로드 실패");
+            finalImageUrl = presignedData.fileUrl;
+         }
+
+         const validPledges = candidateFormData.pledges.filter(p => p.trim() !== '');
+         if (validPledges.length === 0) {
+            alert("최소 1개 이상의 공약을 입력해주세요.");
+            setIsSubmitting(false);
+            return;
+         }
+
+         const submitData = {
+            ...candidateFormData,
+            pledges: validPledges,
+            imageUrl: finalImageUrl
+         };
+
+         let success = false;
+         if (candidateModalMode === 'CREATE') {
+            success = await api.admin.createCandidate(submitData);
+         } else {
+            if (submitData.id) success = await api.admin.updateCandidate(submitData.id, submitData);
+         }
+
+         if (success) {
+            alert("후보자 정보가 저장되었습니다.");
+            fetchData(page, roleFilter, searchTerm);
+            setIsCandidateModalOpen(false);
+         } else {
+            alert("저장에 실패했습니다.");
+         }
+      } catch (error) {
+         console.error('Candidate submit error:', error);
+         alert('처리 중 오류가 발생했습니다.');
+      } finally {
+         setIsSubmitting(false);
+      }
+   };
 
    return (
       <div className="space-y-10">
@@ -241,11 +367,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
                <button onClick={() => setTab('Executives')} className={`px-6 py-2.5 rounded-xl text-xs font-black transition-all ${tab === 'Executives' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
                   임원진 관리
                </button>
+               {/* ★ 후보자 관리 탭 버튼 */}
+               <button onClick={() => setTab('Candidates')} className={`px-6 py-2.5 rounded-xl text-xs font-black transition-all ${tab === 'Candidates' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-600 hover:bg-indigo-50'}`}>
+                  🗳️ 선거 후보 관리 ({candidates.length})
+               </button>
             </div>
          </header>
 
          <main className="min-h-[500px]">
-            {/* 회원 관리 탭 */}
+            {/* 1. 회원 관리 탭 */}
             {tab === 'Users' && (
                <div className="space-y-6">
                   <div className="flex flex-col md:flex-row justify-between items-end gap-4 px-4">
@@ -263,25 +393,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
                            <input
                               type="text"
                               placeholder="이름, 학교 검색..."
-                              className="flex-1 pl-4 py-2.5 
-               bg-white 
-               rounded-l-xl rounded-r-none
-               text-xs font-bold 
-               border border-slate-200 
-               outline-none focus:ring-2 ring-slate-900/10"
+                              className="flex-1 pl-4 py-2.5 bg-white rounded-l-xl rounded-r-none text-xs font-bold border border-slate-200 outline-none focus:ring-2 ring-slate-900/10"
                               value={searchTerm}
                               onChange={e => setSearchTerm(e.target.value)}
                               onKeyDown={handleSearchKey}
                            />
-
                            <button
                               onClick={() => fetchData(0, roleFilter, searchTerm)}
-                              className="px-4 py-2.5 
-               bg-slate-100 
-               border border-l-0 border-slate-200
-               rounded-r-xl rounded-l-none
-               text-xs font-bold text-slate-600
-               hover:bg-slate-200 transition"
+                              className="px-4 py-2.5 bg-slate-100 border border-l-0 border-slate-200 rounded-r-xl rounded-l-none text-xs font-bold text-slate-600 hover:bg-slate-200 transition"
                            >
                               검색
                            </button>
@@ -330,7 +449,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
                                     <div className="flex items-center justify-end gap-4">
                                        {u.role !== 'ADMIN' && (
                                           <>
-                                             {/* 논리적 버튼 노출 처리 */}
                                              {u.role !== 'STAFF' && (
                                                 <button onClick={() => openPromoteModal(u)} className="text-[10px] font-black text-slate-900 hover:text-slate-600 uppercase tracking-widest">Set Staff</button>
                                              )}
@@ -361,7 +479,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
                </div>
             )}
 
-            {/* 임원진 관리 탭 */}
+            {/* 2. 임원진 관리 탭 */}
             {tab === 'Executives' && (
                <div className="space-y-6">
                   <h2 className="text-xl font-black text-slate-900 px-4">임원진 프로필 관리</h2>
@@ -394,11 +512,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
                </div>
             )}
 
-            {/* 콘텐츠 승인 탭 */}
+            {/* 3. 콘텐츠 승인 탭 */}
             {tab === 'Content' && (
                <div className="space-y-6">
                   <h2 className="text-xl font-black text-slate-900 px-4">생활 정보 승인 대기 목록</h2>
-                  {/* 카드가 너무 넓지 않게 그리드 분할 적용 */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                      {pendingInfos.length > 0 ? pendingInfos.map(post => (
                         <div
@@ -412,13 +529,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
                                  {post.schoolTag && <span className="px-2.5 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-wider rounded-lg">{post.schoolTag}</span>}
                               </div>
                               <h3 className="font-black text-slate-900 text-lg group-hover:text-slate-600 transition-colors line-clamp-1">{post.title}</h3>
-
                               <div className="bg-slate-50 rounded-2xl p-4">
                                  <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed font-medium">
                                     {post.content.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ')}
                                  </p>
                               </div>
-
                               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                  <span>BY <span className="text-slate-700">{post.writer || 'Unknown'}</span></span>
                                  <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
@@ -441,24 +556,83 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
                   </div>
                </div>
             )}
+
+            {/* ★ 4. [신규] 선거 후보 관리 탭 */}
+            {tab === 'Candidates' && (
+               <div className="space-y-6">
+                  <div className="flex justify-between items-center px-4">
+                     <div>
+                        <h2 className="text-xl font-black text-slate-900">학생회장 선거 후보 관리</h2>
+                        <p className="text-xs text-slate-400 font-bold mt-1">등록된 후보자는 투표 페이지(/election)에 즉시 반영됩니다.</p>
+                     </div>
+                     <button
+                        onClick={openCreateCandidateModal}
+                        className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black transition-all shadow-lg shadow-indigo-100 flex items-center gap-2"
+                     >
+                        <span>+</span> 새 후보 등록하기
+                     </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                     {candidates.map(c => (
+                        <div key={c.id} className="bg-white p-7 rounded-[2.5rem] border border-slate-100 shadow-sm relative group space-y-4 hover:shadow-md transition-all flex flex-col justify-between">
+                           <div>
+                              <div className="flex justify-between items-start mb-4">
+                                 <span className="px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-black">
+                                    기호 {c.candidateNumber}번
+                                 </span>
+                                 <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => openEditCandidateModal(c)} className="px-2.5 py-1 bg-slate-900 text-white text-[10px] font-black rounded-lg hover:bg-slate-800">EDIT</button>
+                                    <button onClick={() => handleDeleteCandidate(c)} className="px-2.5 py-1 bg-red-50 text-red-500 hover:bg-red-100 text-[10px] font-black rounded-lg">DELETE</button>
+                                 </div>
+                              </div>
+
+                              <div className="flex items-center gap-4 mb-4">
+                                 <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-slate-100 bg-slate-50 shrink-0">
+                                    <img src={c.imageUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400"} className="w-full h-full object-cover" alt={c.name} />
+                                 </div>
+                                 <div>
+                                    <h4 className="font-black text-slate-900 text-lg">{c.name}</h4>
+                                    <p className="text-xs font-bold text-slate-400">{c.school}</p>
+                                    <span className="text-[11px] font-black text-indigo-600">현재 {c.votes || 0}표</span>
+                                 </div>
+                              </div>
+
+                              <div className="bg-slate-50 p-4 rounded-2xl space-y-2">
+                                 <div className="text-[10px] font-black text-indigo-600 italic">"{c.slogan}"</div>
+                                 <ul className="text-xs text-slate-600 space-y-1 list-disc list-inside pt-1 font-medium">
+                                    {c.pledges?.map((p, idx) => (
+                                       <li key={idx} className="line-clamp-1">{p}</li>
+                                    ))}
+                                 </ul>
+                              </div>
+                           </div>
+                        </div>
+                     ))}
+                     {candidates.length === 0 && (
+                        <div className="col-span-full py-20 text-center bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200">
+                           <div className="text-4xl mb-3">🗳️</div>
+                           <p className="text-slate-400 font-bold text-xs">등록된 후보자가 없습니다.</p>
+                           <p className="text-slate-400 text-xs mt-1">우측 상단의 '+ 새 후보 등록하기' 버튼을 눌러 후보자를 추가해주세요.</p>
+                        </div>
+                     )}
+                  </div>
+               </div>
+            )}
          </main>
 
-         {/* ★ 모달: 임원 등록 및 수정 (파일 업로드 UI 적용) */}
+         {/* 1. 임원 모달 */}
          {isModalOpen && (
             <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
                <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => !isSubmitting && setIsModalOpen(false)}></div>
                <form onSubmit={handleModalSubmit} className="relative bg-white w-full max-w-lg rounded-[2.5rem] p-10 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200">
                   <h3 className="text-xl font-black text-slate-900">{modalMode === 'PROMOTE' ? '🎓 임원 등록' : '✏️ 정보 수정'}</h3>
-                  
                   <div className="space-y-4">
                      <div className="grid grid-cols-2 gap-4">
                         <div className="bg-slate-50 p-3 rounded-xl"><div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Name</div><div className="font-bold text-sm">{formData.name}</div></div>
                         <div className="bg-slate-50 p-3 rounded-xl"><div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">School</div><div className="font-bold text-sm">{formData.school}</div></div>
                      </div>
-                     
                      <input value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} placeholder="직책 (예: 회장)" className="w-full bg-slate-50 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:ring-2 ring-slate-900/20 transition-all" required />
-                     
-                     {/* 이미지 업로드 & 미리보기 영역 */}
                      <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
                         <div className="w-16 h-16 rounded-full border-2 border-slate-200 bg-white overflow-hidden shrink-0 flex items-center justify-center text-slate-300">
                            {previewUrl ? (
@@ -469,78 +643,148 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
                         </div>
                         <div className="flex-1">
                            <label className="block text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Profile Image</label>
-                           <input 
-                              type="file" 
-                              accept="image/*" 
-                              onChange={handleFileChange} 
-                              className="w-full text-xs font-medium text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800 transition-all cursor-pointer"
-                           />
+                           <input type="file" accept="image/*" onChange={handleFileChange} className="w-full text-xs font-medium text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800 transition-all cursor-pointer" />
                         </div>
                      </div>
-
                      <textarea value={formData.intro} onChange={e => setFormData({ ...formData, intro: e.target.value })} placeholder="소개글" className="w-full bg-slate-50 rounded-xl px-4 py-3 text-sm font-medium h-24 resize-none outline-none focus:ring-2 ring-slate-900/20 transition-all" required />
                   </div>
-
                   <div className="flex gap-3 mt-8">
                      <button type="button" disabled={isSubmitting} onClick={() => setIsModalOpen(false)} className="flex-1 py-3.5 bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-xl font-black text-xs uppercase tracking-widest transition-colors disabled:opacity-50">취소</button>
                      <button type="submit" disabled={isSubmitting} className="flex-1 py-3.5 bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-400 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200 transition-all flex justify-center items-center gap-2">
-                        {isSubmitting ? (
-                           <>
-                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                              업로드 중...
-                           </>
-                        ) : '저장'}
+                        {isSubmitting ? '업로드 중...' : '저장'}
                      </button>
                   </div>
                </form>
             </div>
          )}
 
-         {/* 회원 상세 조회 모달 */}
-         {selectedUser && (
-            <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-               <div
-                  className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
-                  onClick={() => setSelectedUser(null)}
-               ></div>
+         {/* ★ 2. [신규] 후보자 등록/수정 모달 */}
+         {isCandidateModalOpen && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+               <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => !isSubmitting && setIsCandidateModalOpen(false)}></div>
+               <form onSubmit={handleCandidateModalSubmit} className="relative bg-white w-full max-w-lg rounded-[2.5rem] p-8 md:p-10 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+                  <h3 className="text-xl font-black text-slate-900">
+                     {candidateModalMode === 'CREATE' ? '🗳️ 회장 후보 등록' : '✏️ 후보 정보 수정'}
+                  </h3>
 
-               <div className="relative bg-white w-full max-w-md rounded-[3rem] p-10 space-y-8 animate-in zoom-in-95 duration-200">
-
-                  {/* 헤더 */}
-                  <div className="flex justify-between items-start">
-                     <div>
-                        <span className="text-[10px] font-black uppercase text-slate-600 tracking-widest mb-2 block">
-                           {selectedUser.role} Profile
-                        </span>
-                        <h3 className="text-3xl font-black text-slate-950">
-                           {selectedUser.name}
-                        </h3>
+                  <div className="space-y-4">
+                     <div className="grid grid-cols-3 gap-3">
+                        <div className="col-span-1">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">기호 번호</label>
+                           <input 
+                              type="number" 
+                              min="1"
+                              value={candidateFormData.candidateNumber} 
+                              onChange={e => setCandidateFormData({ ...candidateFormData, candidateNumber: Number(e.target.value) })} 
+                              className="w-full bg-slate-50 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:ring-2 ring-slate-900/20" 
+                              required 
+                           />
+                        </div>
+                        <div className="col-span-2">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">후보자 이름</label>
+                           <input 
+                              type="text" 
+                              placeholder="예: 김한인"
+                              value={candidateFormData.name} 
+                              onChange={e => setCandidateFormData({ ...candidateFormData, name: e.target.value })} 
+                              className="w-full bg-slate-50 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:ring-2 ring-slate-900/20" 
+                              required 
+                           />
+                        </div>
                      </div>
 
-                     <button
-                        onClick={() => setSelectedUser(null)}
-                        className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                     >
-                        <svg
-                           className="w-6 h-6"
-                           fill="none"
-                           stroke="currentColor"
-                           viewBox="0 0 24 24"
-                        >
-                           <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2.5"
-                              d="M6 18L18 6M6 6l12 12"
-                           />
-                        </svg>
-                     </button>
+                     <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">소속 및 전공</label>
+                        <input 
+                           type="text" 
+                           placeholder="예: 히브리대학교 컴퓨터공학과 (학사)"
+                           value={candidateFormData.school} 
+                           onChange={e => setCandidateFormData({ ...candidateFormData, school: e.target.value })} 
+                           className="w-full bg-slate-50 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:ring-2 ring-slate-900/20" 
+                           required 
+                        />
+                     </div>
+
+                     <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">슬로건</label>
+                        <input 
+                           type="text" 
+                           placeholder="예: 소통과 실천으로 하나되는 SKAI"
+                           value={candidateFormData.slogan} 
+                           onChange={e => setCandidateFormData({ ...candidateFormData, slogan: e.target.value })} 
+                           className="w-full bg-slate-50 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 outline-none focus:ring-2 ring-slate-900/20" 
+                           required 
+                        />
+                     </div>
+
+                     {/* 프로필 이미지 업로드 */}
+                     <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <div className="w-16 h-16 rounded-full border-2 border-slate-200 bg-white overflow-hidden shrink-0 flex items-center justify-center text-slate-300">
+                           {previewUrl ? (
+                              <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                           ) : (
+                              <span className="text-xl">👤</span>
+                           )}
+                        </div>
+                        <div className="flex-1">
+                           <label className="block text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">후보자 사진</label>
+                           <input type="file" accept="image/*" onChange={handleFileChange} className="w-full text-xs font-medium text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800 transition-all cursor-pointer" />
+                        </div>
+                     </div>
+
+                     {/* 공약 리스트 입력 */}
+                     <div>
+                        <div className="flex justify-between items-center mb-2">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">주요 공약</label>
+                           {candidateFormData.pledges.length < 8 && (
+                              <button type="button" onClick={addPledgeField} className="text-[11px] font-bold text-indigo-600 hover:underline">+ 공약 추가</button>
+                           )}
+                        </div>
+                        <div className="space-y-2">
+                           {candidateFormData.pledges.map((pledge, idx) => (
+                              <div key={idx} className="flex gap-2">
+                                 <input 
+                                    type="text" 
+                                    placeholder={`공약 ${idx + 1}`}
+                                    value={pledge}
+                                    onChange={e => handlePledgeChange(idx, e.target.value)}
+                                    className="flex-1 bg-slate-50 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 outline-none focus:ring-2 ring-slate-900/20"
+                                    required
+                                 />
+                                 {candidateFormData.pledges.length > 1 && (
+                                    <button type="button" onClick={() => removePledgeField(idx)} className="px-3 bg-red-50 text-red-500 rounded-xl font-bold hover:bg-red-100 text-xs">✕</button>
+                                 )}
+                              </div>
+                           ))}
+                        </div>
+                     </div>
                   </div>
 
-                  {/* 상세 정보 */}
-                  <div className="space-y-4 pt-6 border-t border-slate-50">
+                  <div className="flex gap-3 pt-4">
+                     <button type="button" disabled={isSubmitting} onClick={() => setIsCandidateModalOpen(false)} className="flex-1 py-3.5 bg-slate-100 text-slate-500 hover:bg-slate-200 rounded-xl font-black text-xs uppercase tracking-widest transition-colors disabled:opacity-50">취소</button>
+                     <button type="submit" disabled={isSubmitting} className="flex-1 py-3.5 bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-slate-400 rounded-xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 transition-all flex justify-center items-center gap-2">
+                        {isSubmitting ? '저장 중...' : '후보자 저장'}
+                     </button>
+                  </div>
+               </form>
+            </div>
+         )}
 
-                     {/* 기본 정보들 */}
+         {/* 3. 회원 상세 조회 모달 */}
+         {selectedUser && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+               <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setSelectedUser(null)}></div>
+               <div className="relative bg-white w-full max-w-md rounded-[3rem] p-10 space-y-8 animate-in zoom-in-95 duration-200">
+                  <div className="flex justify-between items-start">
+                     <div>
+                        <span className="text-[10px] font-black uppercase text-slate-600 tracking-widest mb-2 block">{selectedUser.role} Profile</span>
+                        <h3 className="text-3xl font-black text-slate-950">{selectedUser.name}</h3>
+                     </div>
+                     <button onClick={() => setSelectedUser(null)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                     </button>
+                  </div>
+                  <div className="space-y-4 pt-6 border-t border-slate-50">
                      {[
                         { label: 'Username', value: selectedUser.username },
                         { label: 'Email', value: selectedUser.email },
@@ -549,52 +793,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
                         { label: 'Degree', value: selectedUser.degreeLevel || '-' },
                         { label: 'Joined', value: formatDate(selectedUser.joinDate) },
                      ].map((item, idx) => (
-                        <div
-                           key={idx}
-                           className="flex justify-between py-2 border-b border-slate-50 last:border-0"
-                        >
-                           <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                              {item.label}
-                           </span>
-                           <span className="text-sm font-bold text-slate-800 text-right max-w-[60%] break-words">
-                              {item.value || '-'}
-                           </span>
+                        <div key={idx} className="flex justify-between py-2 border-b border-slate-50 last:border-0">
+                           <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{item.label}</span>
+                           <span className="text-sm font-bold text-slate-800 text-right max-w-[60%] break-words">{item.value || '-'}</span>
                         </div>
                      ))}
-
-                     {/* 전공 Badge 스타일 */}
-                     <div className="flex justify-between items-start py-2 border-b border-slate-50">
-                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                           Major(s)
-                        </span>
-
-                        <div className="flex flex-wrap gap-2 justify-end max-w-[60%]">
-                           {[selectedUser.major1, selectedUser.major2, selectedUser.major3]
-                              .filter(Boolean)
-                              .length > 0 ? (
-                              [selectedUser.major1, selectedUser.major2, selectedUser.major3]
-                                 .filter(Boolean)
-                                 .map((major, i) => (
-                                    <span
-                                       key={i}
-                                       className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs font-bold"
-                                    >
-                                       {major}
-                                    </span>
-                                 ))
-                           ) : (
-                              <span className="text-sm font-bold text-slate-400">-</span>
-                           )}
-                        </div>
-                     </div>
-
                   </div>
-
-                  {/* 닫기 버튼 */}
-                  <button
-                     onClick={() => setSelectedUser(null)}
-                     className="w-full py-4 bg-slate-950 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200 transition-transform active:scale-95"
-                  >
+                  <button onClick={() => setSelectedUser(null)} className="w-full py-4 bg-slate-950 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200 transition-transform active:scale-95">
                      Close Profile
                   </button>
                </div>

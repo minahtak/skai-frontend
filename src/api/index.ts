@@ -16,7 +16,7 @@ export const api = {
     }) => {
         try {
             const query = new URLSearchParams();
-            
+
             // 파라미터가 있을 때만 쿼리스트링에 추가
             if (params) {
                 if (params.page !== undefined) query.append('page', String(params.page));
@@ -30,7 +30,7 @@ export const api = {
             const response = await client.get(`/notices?${query.toString()}`);
 
             // ★ [핵심 수정] response.data 전체(PageResponse 객체)를 반환해야 함!
-            return response.data; 
+            return response.data;
 
         } catch (e) {
             console.error("공지사항 로드 실패:", e);
@@ -284,7 +284,48 @@ export const api = {
             } catch (error) {
                 return false;
             }
+        },
+
+        getCandidates: async () => {
+            try {
+                const response = await client.get('/election/candidates');
+                return response.data;
+            } catch (error) {
+                console.error("후보자 목록 로드 에러:", error);
+                return [];
+            }
+        },
+
+        createCandidate: async (data: any) => {
+            try {
+                await client.post('/admin/candidates', data);
+                return true;
+            } catch (error) {
+                console.error("후보자 등록 실패:", error);
+                return false;
+            }
+        },
+
+        updateCandidate: async (id: number, data: any) => {
+            try {
+                await client.put(`/admin/candidates/${id}`, data);
+                return true;
+            } catch (error) {
+                console.error("후보자 수정 실패:", error);
+                return false;
+            }
+        },
+
+        deleteCandidate: async (id: number) => {
+            try {
+                await client.delete(`/admin/candidates/${id}`);
+                return true;
+            } catch (error) {
+                console.error("후보자 삭제 실패:", error);
+                return false;
+            }
         }
+
     },
 
     // ==========================================
@@ -355,7 +396,7 @@ export const api = {
     getComments: async (type, targetId) => {
         try {
             const response = await client.get(`/comments?type=${type}&targetId=${targetId}`);
-            return response.data; 
+            return response.data;
         } catch (error) {
             console.error("❌ Comment 조회 에러:", error);
             return [];
@@ -386,22 +427,22 @@ export const api = {
     // 6. Info (생활정보) API
     // ==========================================
 
-    getInfos: async (params?: { category?: string; page?: number; size?: number; sort?: string; status?: string}) => {
+    getInfos: async (params?: { category?: string; page?: number; size?: number; sort?: string; status?: string }) => {
         try {
             const query = new URLSearchParams();
-            
+
             if (params?.category && params.category !== 'All') {
                 query.append('category', params.category);
             }
-            
+
             if (params?.page !== undefined) {
                 query.append('page', String(params.page));
             }
-            
+
             if (params?.size !== undefined) {
                 query.append('size', String(params.size));
             }
-            
+
             if (params?.sort) {
                 query.append('sort', params.sort);
             }
@@ -459,7 +500,7 @@ export const api = {
     approveInfo: async (id: number | string, status: string, reason?: string) => {
         try {
             const query = new URLSearchParams();
-            query.append('status', status); 
+            query.append('status', status);
 
             if (reason) {
                 query.append('reason', reason);
@@ -508,13 +549,13 @@ export const api = {
         }
     },
 
-    getPresignedUrl: async (fileName: string, contentType: string) => { 
+    getPresignedUrl: async (fileName: string, contentType: string) => {
         try {
-            const response = await client.post('/gallery/presigned-url', { 
-                fileName, 
-                contentType 
+            const response = await client.post('/gallery/presigned-url', {
+                fileName,
+                contentType
             });
-            return response.data; 
+            return response.data;
         } catch (error) {
             console.error("❌ Pre-signed URL 발급 실패:", error);
             return null;
@@ -525,7 +566,7 @@ export const api = {
         try {
             await axios.put(uploadUrl, file, {
                 headers: {
-                    'Content-Type': file.type 
+                    'Content-Type': file.type
                 }
             });
             return true;
@@ -604,7 +645,7 @@ export const api = {
     // ==========================================
     // 학생회 투표 (Election) API
     // ==========================================
-    
+
     // 후보자 및 선거 정보 조회
     getCandidates: async () => {
         try {
@@ -617,8 +658,8 @@ export const api = {
                 {
                     id: 1,
                     candidateNumber: 1,
-                    name: "김한인",
-                    school: "히브리대학교 컴퓨터공학과 (학사)",
+                    name: "뚱이",
+                    school: "히브리대학교 컴퓨터공학과",
                     slogan: "소통과 실천으로 하나되는 SKAI",
                     imageUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400",
                     pledges: [
@@ -631,8 +672,8 @@ export const api = {
                 {
                     id: 2,
                     candidateNumber: 2,
-                    name: "이지혜",
-                    school: "히브리대학교 경영학과 (학사)",
+                    name: "스폰지밥",
+                    school: "히브리대학교 경영학과",
                     slogan: "유학생의 든든한 울타리, 행동하는 학생회",
                     imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400",
                     pledges: [
@@ -673,5 +714,6 @@ export const api = {
             return { hasVoted: false };
         }
     }
+
 
 };
