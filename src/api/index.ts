@@ -598,6 +598,80 @@ export const api = {
         // DELETE 요청은 body 데이터를 보낼 때 { data: ... } 형태로 감싸야 합니다.
         const response = await client.delete('/mypage/withdraw', { data: passwordData });
         return response.data;
+    },
+
+
+    // ==========================================
+    // 학생회 투표 (Election) API
+    // ==========================================
+    
+    // 후보자 및 선거 정보 조회
+    getCandidates: async () => {
+        try {
+            const response = await client.get('/election/candidates');
+            return response.data;
+        } catch (error) {
+            console.error("후보자 목록 조회 실패:", error);
+            // 백엔드 연결 전 목데이터 (테스트용)
+            return [
+                {
+                    id: 1,
+                    candidateNumber: 1,
+                    name: "김한인",
+                    school: "히브리대학교 컴퓨터공학과 (학사)",
+                    slogan: "소통과 실천으로 하나되는 SKAI",
+                    imageUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400",
+                    pledges: [
+                        "전공별 족보 및 학술 아카이브 전면 확대",
+                        "예루살렘-텔아비브 교류의 밤 정기 개최",
+                        "신입생/메키나 1:1 멘토링 프로그램 도입"
+                    ],
+                    votes: 12
+                },
+                {
+                    id: 2,
+                    candidateNumber: 2,
+                    name: "이지혜",
+                    school: "히브리대학교 경영학과 (학사)",
+                    slogan: "유학생의 든든한 울타리, 행동하는 학생회",
+                    imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400",
+                    pledges: [
+                        "기숙사/비자/정착 행정 가이드 최신화",
+                        "시험 기간 야식 및 간식 행사 지원",
+                        "귀국 및 취업 네트워킹 세미나 주최"
+                    ],
+                    votes: 15
+                }
+            ];
+        }
+    },
+
+    // 투표용 히브리대 이메일 인증번호 발송
+    sendVoteEmailCode: async (email: string) => {
+        const response = await client.post(`/election/send-code?email=${encodeURIComponent(email)}`);
+        return response.data;
+    },
+
+    // 투표용 이메일 인증번호 검증
+    verifyVoteEmailCode: async (email: string, code: string) => {
+        const response = await client.post(`/election/verify-code?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`);
+        return response.data; // { success: true, message: "..." }
+    },
+
+    // 최종 투표 제출
+    submitVote: async (payload: { email: string; code: string; candidateId: string | number }) => {
+        const response = await client.post('/election/vote', payload);
+        return response.data;
+    },
+
+    // 특정 이메일의 투표 여부 확인
+    checkVotedStatus: async (email: string) => {
+        try {
+            const response = await client.get(`/election/check?email=${encodeURIComponent(email)}`);
+            return response.data; // { hasVoted: boolean }
+        } catch (e) {
+            return { hasVoted: false };
+        }
     }
 
 };

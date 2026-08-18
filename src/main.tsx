@@ -10,6 +10,5 @@ if (!rootElement) {
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root')!).render(
-  // 그냥 App만 남기면 됩니다!
   <App />
 )

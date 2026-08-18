@@ -141,3 +141,22 @@ export interface Executive {
   intro: string;
   imageUrl: string;
 }
+
+// 9. 학생회 투표 관련 타입
+export interface Candidate {
+  id: string | number;
+  candidateNumber: number; // 기호 1번, 2번 등
+  name: string;
+  school: string;          // 소속 학과/학부
+  major?: string;
+  slogan?: string;         // 슬로건
+  pledges: string[];       // 주요 공약 배열
+  imageUrl?: string;
+  votes: number;           // 득표수
+}
+
+export interface VotePayload {
+  email: string;
+  code: string;            // 인증코드 (보안 검증용)
+  candidateId: string | number;
+}

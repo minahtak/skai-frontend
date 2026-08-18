@@ -24,6 +24,7 @@ import MemberForm from './pages/MemberForm';
 import MyPage from './pages/MyPage';
 import FindId from './pages/FindId';
 import ResetPassword from './pages/ResetPassword';
+import Election from './pages/Election';
 
 
 // Components
@@ -118,6 +119,7 @@ const App: React.FC = () => {
               <Route path="/notice/:id" element={<NoticeDetail user={user} />} />
               <Route path="/notice/new" element={user ? <NoticeForm user={user} /> : <Navigate to="/login" />} />
               <Route path="/notice/edit/:id" element={user ? <NoticeForm user={user} /> : <Navigate to="/login" />} />
+              <Route path="/election" element={<Election />} />
 
               {/* 정보 게시판 */}
               <Route path="/info" element={<InfoList infos={infos} user={user} setInfos={setInfos} />} />
