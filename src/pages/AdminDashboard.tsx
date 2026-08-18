@@ -36,10 +36,10 @@ const getImageUrl = (url: string, name: string) => {
       let id = '';
       const parts = url.split('/d/');
       if (parts.length > 1) {
-         id = parts[1].split('/')[0];       // ✅ parts[1]에서 잘라내기
+         id = parts[1].split('/')[0];        
       } else if (url.includes('id=')) {
          const match = url.match(/id=([a-zA-Z0-9_-]+)/);
-         if (match) id = match[1];          // ✅ 캡처 그룹만 꺼내기
+         if (match) id = match[1];           
       }
       if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
    }

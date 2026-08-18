@@ -289,10 +289,18 @@ export const api = {
         getCandidates: async () => {
             try {
                 const response = await client.get('/election/candidates');
-                return response.data;
-            } catch (error) {
-                console.error("후보자 목록 로드 에러:", error);
+                // 1. 응답이 순수 배열인 경우
+                if (Array.isArray(response.data)) {
+                    return response.data;
+                }
+                // 2. Spring Page 객체({ content: [...] })로 온 경우
+                else if (response.data && Array.isArray(response.data.content)) {
+                    return response.data.content;
+                }
                 return [];
+            } catch (error) {
+                console.error("후보자 목록 로드 실패:", error);
+                return []; // 에러 시 빈 배열 반환
             }
         },
 
