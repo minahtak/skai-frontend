@@ -11,7 +11,7 @@ const SINGLE_CANDIDATE: Candidate = {
     candidateNumber: 1,
     name: "하세윤",
     school: "The Hebrew University of Jerusalem",
-    major: "Business Administration",
+    major: "국제관계학 & 경영학",
     slogan: "입학부터 졸업까지 버팀목이 되는 학생회를 만들겠습니다",
     imageUrl: "https://cdn.skaisrael.com/3a8405a6-cef0-46ab-88f2-0072f0b582b6_%ED%95%98%EC%84%B8%EC%9C%A4.jpg",
     pledges: [
@@ -194,7 +194,7 @@ const Election: React.FC = () => {
             <header className="text-center pt-4 pb-2 space-y-4">
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-700 text-xs font-bold shadow-sm">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    2026 HUJI ELECTION &bull; 온라인 투표 진행 중
+                    2026 HUJI ELECTION
                 </div>
 
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
@@ -212,7 +212,7 @@ const Election: React.FC = () => {
                 <div className="flex items-center justify-between border-b border-slate-100 pb-5 mb-8">
                     <div className="flex items-center gap-2.5">
                         <div>
-                            <h2 className="text-lg md:text-xl font-black text-slate-900">온라인 투표</h2>
+                            <h2 className="text-lg md:text-xl font-black text-slate-900">투표하기</h2>
                             <p className="text-xs text-slate-400 font-medium">1인 1표 &bull; 철저한 비밀투표 보장</p>
                         </div>
                     </div>
@@ -295,7 +295,7 @@ const Election: React.FC = () => {
                         <div className="bg-slate-50/80 rounded-2xl p-5 md:p-6 border border-slate-100 space-y-4">
                             <div className="flex justify-between items-center">
                                 <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                                    <span>✉️</span> 히브리대 웹메일 본인 인증
+                                    히브리대 이메일 인증
                                 </label>
                                 {isEmailVerified && (
                                     <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">
@@ -436,18 +436,10 @@ const Election: React.FC = () => {
                                 className="w-full h-full object-cover"
                             />
                         </div>
-                        <span className="px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-black mb-2">
-                            후보
-                        </span>
                         <h3 className="text-2xl font-black text-slate-900">{SINGLE_CANDIDATE.name}</h3>
                         <p className="text-xs font-bold text-indigo-600 mt-0.5">{SINGLE_CANDIDATE.major}</p>
                         <p className="text-[11px] text-slate-400 font-medium mt-1">{SINGLE_CANDIDATE.school}</p>
 
-                        <div className="mt-4 pt-4 border-t border-slate-200/60 w-full text-center">
-                            <p className="text-xs font-bold text-slate-700 italic leading-snug">
-                                "{SINGLE_CANDIDATE.slogan}"
-                            </p>
-                        </div>
                     </div>
 
                     <div className="md:col-span-8 space-y-4">
@@ -461,13 +453,16 @@ const Election: React.FC = () => {
                                     <span className="w-5 h-5 rounded-lg bg-indigo-600 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
                                         {idx + 1}
                                     </span>
+                                    <p className="text-xs font-bold text-slate-700 leading-relaxed">
+                                        {pledge}
+                                    </p>
                                 </div>
                             ))}
                         </div>
 
                         <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100/50 mt-4">
                             <p className="text-[11px] font-medium text-slate-500 leading-relaxed">
-                                후보자의 비전과 공약에 공감하신다면 위의 온라인 투표함에서 본인 인증 후 소중한 한 표를 행사해주시기 바랍니다.
+                                후보자의 비전과 공약에 공감하신다면 소중한 한 표를 행사해주세요.
                             </p>
                         </div>
                     </div>
