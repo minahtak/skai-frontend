@@ -235,7 +235,7 @@ const Election: React.FC = () => {
                     <div className="py-3 space-y-6 animate-in fade-in duration-300">
                         <div className="text-center space-y-1">
                             <div className="inline-block px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-full">
-                                이미 투표를 완료하셨습니다.
+                                투표를 완료하셨습니다.
                             </div>
                             <p className="text-[11px] sm:text-xs text-slate-400">실시간 개표 현황입니다.</p>
                         </div>
