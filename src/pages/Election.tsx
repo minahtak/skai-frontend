@@ -473,11 +473,6 @@ const Election: React.FC = () => {
                             ))}
                         </div>
 
-                        <div className="p-3.5 rounded-xl bg-indigo-50/40 border border-indigo-100/60 mt-3">
-                            <p className="text-[11px] text-slate-500 leading-relaxed text-center sm:text-left break-keep">
-                                후보자의 비전과 공약을 확인하신 후 소중한 한 표를 행사해 주세요.
-                            </p>
-                        </div>
                     </div>
                 </div>
             </section>
