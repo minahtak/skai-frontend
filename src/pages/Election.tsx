@@ -37,7 +37,7 @@ const Election: React.FC = () => {
     const [voteStats, setVoteStats] = useState<VoteStats>({ approve: 0, reject: 0 });
     const [loading, setLoading] = useState<boolean>(true);
 
-    // 폼 입력 상태 (모달 없이 인라인 관리)
+    // 폼 입력 상태
     const [email, setEmail] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
     const [isEmailCodeSent, setIsEmailCodeSent] = useState(false);
@@ -66,9 +66,9 @@ const Election: React.FC = () => {
         const savedVoted = localStorage.getItem('huji_election_voted');
         const savedChoice = localStorage.getItem('huji_election_choice') as VoteChoice | null;
 
-        if (savedVoted === 'true' && savedChoice) {
+        if (savedVoted === 'true') {
             setHasVoted(true);
-            setMyVote(savedChoice);
+            if (savedChoice) setMyVote(savedChoice);
         }
 
         fetchVoteStats();
@@ -100,8 +100,17 @@ const Election: React.FC = () => {
             setIsEmailCodeSent(true);
             setEmailMsg({ text: "인증번호가 발송되었습니다. 웹메일함을 확인해주세요.", color: "text-emerald-600" });
         } catch (err: any) {
-            const errorMsg = err.response?.data?.message || "이미 투표에 참여한 이메일이거나 발송에 실패했습니다.";
-            setEmailMsg({ text: errorMsg, color: "text-red-500" });
+            const errorMsg = err.response?.data?.message || "";
+
+            // ★ 이미 투표한 이메일이면 즉시 완료 폼(실시간 개표 현황)으로 전환
+            if (errorMsg.includes("이미") || errorMsg.includes("완료")) {
+                setHasVoted(true);
+                localStorage.setItem('huji_election_voted', 'true');
+                await fetchVoteStats();
+                return;
+            }
+
+            setEmailMsg({ text: errorMsg || "인증 코드 발송에 실패했습니다.", color: "text-red-500" });
         } finally {
             setIsSendingCode(false);
         }
@@ -176,13 +185,12 @@ const Election: React.FC = () => {
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 md:space-y-12 pb-24 px-4 sm:px-6 animate-in fade-in duration-500">
-            {/* SEO 설정 */}
             <Helmet>
                 <title>학생회장 선거 | SKAI 이스라엘 한인 학생회</title>
                 <meta name="description" content="히브리대학교 한인학생회장 단일 후보 찬반 투표" />
             </Helmet>
 
-            {/* 1. 선거 헤더 (홈 화면 배너 탈피, 공식 투표소 스타일) */}
+            {/* 1. 선거 헤더 */}
             <header className="text-center pt-4 pb-2 space-y-4">
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-700 text-xs font-bold shadow-sm">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -201,7 +209,6 @@ const Election: React.FC = () => {
 
             {/* 2. 메인 투표함 섹션 (인라인 기표소) */}
             <section className="bg-white border-2 border-indigo-100/80 rounded-[2.5rem] p-6 sm:p-10 shadow-xl shadow-indigo-50/50 relative overflow-hidden">
-                {/* 상단 탭/스텝 안내 */}
                 <div className="flex items-center justify-between border-b border-slate-100 pb-5 mb-8">
                     <div className="flex items-center gap-2.5">
                         <span className="text-2xl">🗳️</span>
@@ -211,7 +218,6 @@ const Election: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* 진행 단계 배지 */}
                     <div className="flex items-center gap-2 text-xs font-bold">
                         <span className={`px-2.5 py-1 rounded-lg transition-colors ${
                             isEmailVerified ? 'bg-emerald-50 text-emerald-600 font-black' : 'bg-indigo-600 text-white font-black'
@@ -227,16 +233,18 @@ const Election: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 상황 A: 이미 투표를 마친 경우 */}
+                {/* 상황 A: 이미 투표를 마친 경우 (요청하신 완료 폼과 실시간 개표율 노출) */}
                 {hasVoted ? (
-                    <div className="text-center py-6 space-y-6">
+                    <div className="text-center py-6 space-y-6 animate-in zoom-in-95 duration-300">
                         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 text-3xl shadow-sm mb-2">
                             ✓
                         </div>
                         <div className="space-y-1.5">
                             <h3 className="text-2xl font-black text-slate-900">투표가 정상적으로 완료되었습니다</h3>
-                            <p className="text-sm font-medium text-slate-500">
-                                유권자님의 선택: <span className="font-black text-indigo-600">{myVote === 'APPROVE' ? '👍 찬성' : '👎 반대'}</span>
+                            <p className="text-sm font-medium text-slate-600">
+                                유권자님의 선택: <span className="font-black text-indigo-600">
+                                    {myVote === 'APPROVE' ? '👍 찬성' : myVote === 'REJECT' ? '👎 반대' : '투표 완료'}
+                                </span>
                             </p>
                             <p className="text-xs text-slate-400 pt-1">
                                 인증 기록과 실제 투표 데이터는 분리되어 익명성이 철저히 보장되었습니다.
@@ -260,7 +268,7 @@ const Election: React.FC = () => {
                                         </span>
                                         <span className="text-slate-800 font-black">{approveRate}% ({voteStats.approve}표)</span>
                                     </div>
-                                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                                    <div className="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden">
                                         <div className="bg-indigo-600 h-full transition-all duration-700" style={{ width: `${approveRate}%` }}></div>
                                     </div>
                                 </div>
@@ -274,7 +282,7 @@ const Election: React.FC = () => {
                                         </span>
                                         <span className="text-slate-800 font-black">{rejectRate}% ({voteStats.reject}표)</span>
                                     </div>
-                                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                                    <div className="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden">
                                         <div className="bg-rose-400 h-full transition-all duration-700" style={{ width: `${rejectRate}%` }}></div>
                                     </div>
                                 </div>
@@ -282,7 +290,7 @@ const Election: React.FC = () => {
                         </div>
                     </div>
                 ) : (
-                    /* 상황 B: 투표 진행 중인 경우 (1단계 인증 -> 2단계 찬반 선택) */
+                    /* 상황 B: 투표 진행 중인 경우 */
                     <div className="space-y-8">
                         {/* 1단계: 웹메일 인증 영역 */}
                         <div className="bg-slate-50/80 rounded-2xl p-5 md:p-6 border border-slate-100 space-y-4">
@@ -320,7 +328,6 @@ const Election: React.FC = () => {
                                 </button>
                             </div>
 
-                            {/* 인증번호 입력창 (발송 후 & 아직 미인증 시 노출) */}
                             {isEmailCodeSent && !isEmailVerified && (
                                 <div className="pt-2 flex flex-col sm:flex-row gap-2.5 animate-in fade-in duration-300">
                                     <input
@@ -347,7 +354,7 @@ const Election: React.FC = () => {
                             )}
                         </div>
 
-                        {/* 2단계: 찬성 / 반대 기표 영역 (인증 완료 시 화면에 즉시 노출) */}
+                        {/* 2단계: 찬성 / 반대 기표 영역 */}
                         {isEmailVerified ? (
                             <div className="space-y-6 animate-in slide-in-from-top-4 duration-500 pt-2 border-t border-slate-100">
                                 <div className="text-center space-y-1">
@@ -359,7 +366,6 @@ const Election: React.FC = () => {
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
-                                    {/* 찬성 버튼 */}
                                     <button
                                         type="button"
                                         onClick={() => setSelectedChoice('APPROVE')}
@@ -374,7 +380,6 @@ const Election: React.FC = () => {
                                         <span className="text-[11px] font-bold text-slate-400">후보의 당선에 동의합니다</span>
                                     </button>
 
-                                    {/* 반대 버튼 */}
                                     <button
                                         type="button"
                                         onClick={() => setSelectedChoice('REJECT')}
@@ -390,7 +395,6 @@ const Election: React.FC = () => {
                                     </button>
                                 </div>
 
-                                {/* 최종 제출 버튼 */}
                                 <div className="max-w-lg mx-auto pt-2">
                                     <button
                                         type="button"
@@ -407,7 +411,6 @@ const Election: React.FC = () => {
                                 </div>
                             </div>
                         ) : (
-                            /* 미인증 상태일 때 친절한 안내 */
                             <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
                                 <p className="text-xs md:text-sm font-bold text-slate-400">
                                     위 입력창에서 <strong className="text-slate-600">히브리대 웹메일 인증</strong>을 완료하시면 찬/반 기표 버튼이 활성화됩니다.
@@ -426,7 +429,6 @@ const Election: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-                    {/* 왼쪽: 후보자 기본 프로필 */}
                     <div className="md:col-span-4 flex flex-col items-center text-center p-6 bg-slate-50/80 rounded-3xl border border-slate-100">
                         <div className="w-32 h-32 md:w-36 md:h-36 rounded-2xl overflow-hidden shadow-md border-4 border-white mb-4 bg-slate-200">
                             <img
@@ -449,7 +451,6 @@ const Election: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* 오른쪽: 핵심 공약 목록 */}
                     <div className="md:col-span-8 space-y-4">
                         <h4 className="text-sm font-black text-slate-800 flex items-center gap-2">
                             <span>📌</span> 유권자를 위한 주요 실천 공약
