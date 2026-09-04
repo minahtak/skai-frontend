@@ -9,16 +9,16 @@ import { api } from '../api';
 const SINGLE_CANDIDATE: Candidate = {
     id: 1,
     candidateNumber: 1,
-    name: "탁민아",
+    name: "하세윤",
     school: "The Hebrew University of Jerusalem",
-    major: "Economics & Business Administration",
-    slogan: "학생 여러분의 목소리로 더 가깝고 든든한 한인회를 만들겠습니다",
-    imageUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600",
+    major: "? & Business Administration",
+    slogan: "입학부터 졸업까지 버팀목이 되는 학생회를 만들겠습니다",
+    imageUrl: "https://cdn.skaisrael.com/3a8405a6-cef0-46ab-88f2-0072f0b582b6_%ED%95%98%EC%84%B8%EC%9C%A4.jpg",
     pledges: [
-        "학기별 한인 유학생 정기 네트워킹 및 학술/커리어 멘토링 프로그램 운영",
+        "학업·어학 관련 정보 및 지원 확대",
         "학교 생활·학사 행정 가이드북 및 이스라엘 정착 팁 웹 아카이브 구축",
-        "비상 상황 시 신속 대응 및 안전 지원을 위한 긴급 연락망 체계화",
-        "중간/기말고사 간식 행사 및 한국 문화 교류 행사 정기 지원"
+        "선후배 네트워크를 통한 학업·생활 지원",
+        "유학생활에 필요한 체류·행정·주거 지원 강화"
     ],
     votes: 0
 };
