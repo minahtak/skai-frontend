@@ -102,7 +102,6 @@ const Election: React.FC = () => {
         } catch (err: any) {
             const errorMsg = err.response?.data?.message || "";
 
-            // 이미 투표한 이메일인 경우 즉시 완료 폼(실시간 개표율)으로 전환
             if (errorMsg.includes("이미") || errorMsg.includes("완료")) {
                 setHasVoted(true);
                 localStorage.setItem('huji_election_voted', 'true');
@@ -186,7 +185,7 @@ const Election: React.FC = () => {
     return (
         <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 md:space-y-10 pb-20 px-4 sm:px-6 animate-in fade-in duration-300">
             <Helmet>
-                <title>SKAI | 학생회장 선거</title>
+                <title>SKAI ｜ 학생회장 선거</title>
                 <meta name="description" content="히브리대학교 한인학생회장 단일 후보 찬반 투표" />
             </Helmet>
 
@@ -197,42 +196,54 @@ const Election: React.FC = () => {
                     2026 HUJI ELECTION
                 </div>
 
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight break-keep">
                     히브리대 한인학생회장 선거
                 </h1>
 
-                <p className="text-xs sm:text-sm text-slate-500 font-normal max-w-md mx-auto leading-relaxed">
-                    히브리대학교 한인 학생회 공식 투표 페이지입니다.<br />
+                <p className="text-xs sm:text-sm text-slate-500 font-normal max-w-md mx-auto leading-relaxed break-keep">
+                    히브리대학교 한인 학생회 공식 투표 페이지입니다.<br className="hidden sm:inline" />
                     학교 이메일(<span className="text-indigo-600 font-medium">@mail.huji.ac.il</span>) 인증 후 투표해 주세요.
                 </p>
             </header>
 
             {/* 2. 메인 투표함 섹션 */}
             <section className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 shadow-sm relative">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+                
+                {/* 헤더 부분: 모바일에서 세로/가로 자동 대응 및 글자 쪼개짐 완전 방지 */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 border-b border-slate-100 pb-4 mb-6">
                     <div>
                         <h2 className="text-base sm:text-lg font-bold text-slate-900">투표하기</h2>
-                        <p className="text-[11px] sm:text-xs text-slate-400">1인 1표 · 비밀투표 보장</p>
+                        <p className="text-[11px] sm:text-xs text-slate-400 whitespace-nowrap">1인 1표 · 비밀투표 보장</p>
                     </div>
 
-                    <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold">
-                        <span className={`px-2.5 py-1 rounded-md transition-colors ${
-                            isEmailVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-600 text-white'
-                        }`}>
-                            1. 본인인증
-                        </span>
-                        <span className="text-slate-300 text-xs">→</span>
-                        <span className={`px-2.5 py-1 rounded-md transition-colors ${
-                            hasVoted ? 'bg-emerald-50 text-emerald-700' : isEmailVerified ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'
-                        }`}>
-                            2. 찬/반 표결
-                        </span>
-                    </div>
+                    {/* 우측 상태 인디케이터: 이미 투표한 경우 깔끔하게 '투표 완료' 뱃지만 표기 */}
+                    {hasVoted ? (
+                        <div className="self-start sm:self-auto">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-md whitespace-nowrap">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                투표 완료
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold whitespace-nowrap self-start sm:self-auto shrink-0">
+                            <span className={`px-2.5 py-1 rounded-md transition-colors ${
+                                isEmailVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-600 text-white'
+                            }`}>
+                                1. 본인인증
+                            </span>
+                            <span className="text-slate-300 text-xs">→</span>
+                            <span className={`px-2.5 py-1 rounded-md transition-colors ${
+                                isEmailVerified ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'
+                            }`}>
+                                2. 찬/반 표결
+                            </span>
+                        </div>
+                    )}
                 </div>
 
-                {/* 상황 A: 이미 투표를 완료한 경우 (간결한 안내 문구 + 실시간 개표율) */}
+                {/* 상황 A: 이미 투표를 완료한 경우 (안내 문구 + 실시간 개표율) */}
                 {hasVoted ? (
-                    <div className="py-3 space-y-6 animate-in fade-in duration-300">
+                    <div className="py-2 space-y-6 animate-in fade-in duration-300">
                         <div className="text-center space-y-1">
                             <div className="inline-block px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-full">
                                 투표를 완료하셨습니다.
@@ -295,11 +306,11 @@ const Election: React.FC = () => {
                 ) : (
                     /* 상황 B: 투표 진행 중인 경우 */
                     <div className="space-y-6">
-                        {/* 1단계: 이메일 인증 영역 */}
+                        {/* 1단계: 웹메일 인증 영역 */}
                         <div className="bg-slate-50 rounded-xl p-4 sm:p-5 border border-slate-100 space-y-3">
                             <div className="flex justify-between items-center">
                                 <label className="text-xs font-bold text-slate-700">
-                                    히브리대 이메일 인증
+                                    히브리대 웹메일 인증
                                 </label>
                                 {isEmailVerified && (
                                     <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
@@ -361,10 +372,10 @@ const Election: React.FC = () => {
                         {isEmailVerified ? (
                             <div className="space-y-5 pt-2 border-t border-slate-100 animate-in fade-in duration-300">
                                 <div className="text-center space-y-1">
-                                    <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                                    <h3 className="text-base sm:text-lg font-bold text-slate-900 break-keep">
                                         기호 1번 <span className="text-indigo-600">{SINGLE_CANDIDATE.name}</span> 후보 찬반 투표
                                     </h3>
-                                    <p className="text-xs text-slate-400">원하시는 선택지를 누른 후 투표 제출 버튼을 눌러주세요.</p>
+                                    <p className="text-xs text-slate-400 break-keep">원하시는 선택지를 누른 후 투표 제출 버튼을 눌러주세요.</p>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3 sm:gap-4 max-w-md mx-auto">
@@ -416,7 +427,7 @@ const Election: React.FC = () => {
                             </div>
                         ) : (
                             <div className="text-center py-5 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                                <p className="text-xs text-slate-400 font-medium">
+                                <p className="text-xs text-slate-400 font-medium break-keep">
                                     이메일 인증을 완료하시면 찬/반 선택 버튼이 활성화됩니다.
                                 </p>
                             </div>
@@ -447,7 +458,7 @@ const Election: React.FC = () => {
                         <p className="text-[11px] text-slate-400 font-normal mt-1">{SINGLE_CANDIDATE.school}</p>
                     </div>
 
-                    {/* 공약 리스트: 2열 배치가 아닌 1열로 하나씩 순서대로 배치 */}
+                    {/* 공약 리스트 (1열 세로 배치) */}
                     <div className="md:col-span-8 space-y-2.5 sm:space-y-3">
                         <div className="flex flex-col gap-2.5">
                             {SINGLE_CANDIDATE.pledges.map((pledge, idx) => (
@@ -455,13 +466,18 @@ const Election: React.FC = () => {
                                     <span className="w-5 h-5 rounded-md bg-indigo-600 text-white text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                                         {idx + 1}
                                     </span>
-                                    <p className="text-xs sm:text-sm font-medium text-slate-700 leading-snug pt-0.5">
+                                    <p className="text-xs sm:text-sm font-medium text-slate-700 leading-snug pt-0.5 break-keep">
                                         {pledge}
                                     </p>
                                 </div>
                             ))}
                         </div>
 
+                        <div className="p-3.5 rounded-xl bg-indigo-50/40 border border-indigo-100/60 mt-3">
+                            <p className="text-[11px] text-slate-500 leading-relaxed text-center sm:text-left break-keep">
+                                후보자의 비전과 공약을 확인하신 후 소중한 한 표를 행사해 주세요.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -471,10 +487,10 @@ const Election: React.FC = () => {
                 <h4 className="text-xs sm:text-sm font-bold text-slate-800">
                     선거 및 투표 유의사항
                 </h4>
-                <ul className="text-slate-500 font-normal space-y-1 text-xs list-disc list-inside leading-relaxed">
+                <ul className="text-slate-500 font-normal space-y-1 text-xs list-disc list-inside leading-relaxed break-keep">
                     <li>투표는 <strong className="text-slate-700 font-medium">히브리대학교 공식 이메일(@mail.huji.ac.il)</strong> 인증을 완료한 유권자에 한해 1인 1표로 진행됩니다.</li>
                     <li>투표 제출 완료 후에는 선택을 변경하거나 재투표할 수 없습니다.</li>
-                    <li>이메일 인증 정보와 투표 결과 데이터는 분리 처리되어 <strong className="text-slate-700 font-medium">비밀 투표</strong>가 보장됩니다.</li>
+                    <li>웹메일 인증 정보와 투표 결과 데이터는 분리 처리되어 <strong className="text-slate-700 font-medium">비밀 투표</strong>가 보장됩니다.</li>
                 </ul>
             </footer>
         </div>
