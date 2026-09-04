@@ -157,6 +157,7 @@ export interface Candidate {
 
 export interface VotePayload {
   email: string;
-  code: string;            // 인증코드 (보안 검증용)
+  code: string;
   candidateId: string | number;
+  choice?: 'APPROVE' | 'REJECT';  
 }

@@ -649,71 +649,82 @@ export const api = {
         return response.data;
     },
 
-
     // ==========================================
     // 학생회 투표 (Election) API
     // ==========================================
 
-    // 후보자 및 선거 정보 조회
+    // 1. 단일 후보자 정보 조회 (백엔드 미연결 시 목데이터 1명 반환)
     getCandidates: async () => {
         try {
             const response = await client.get('/election/candidates');
             return response.data;
         } catch (error) {
             console.error("후보자 목록 조회 실패:", error);
-            // 백엔드 연결 전 목데이터 (테스트용)
+            // 단일 후보 찬반 투표용 목데이터
             return [
                 {
                     id: 1,
                     candidateNumber: 1,
-                    name: "뚱이",
-                    school: "히브리대학교 컴퓨터공학과",
-                    slogan: "소통과 실천으로 하나되는 SKAI",
+                    name: "하세윤",
+                    school: "히브리대학교",
+                    slogan: "입학부터 졸업까지 버팀목이 되는 학생회",
                     imageUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400",
                     pledges: [
-                        "전공별 족보 및 학술 아카이브 전면 확대",
-                        "예루살렘-텔아비브 교류의 밤 정기 개최",
-                        "신입생/메키나 1:1 멘토링 프로그램 도입"
+                        "학업·어학 관련 정보 및 지원 확대",
+                        "선후배 네트워크를 통한 학업·생활 지원",
+                        "유학생활에 필요한 체류·행정·주거 지원 강화"
                     ],
-                    votes: 12
-                },
-                {
-                    id: 2,
-                    candidateNumber: 2,
-                    name: "스폰지밥",
-                    school: "히브리대학교 경영학과",
-                    slogan: "유학생의 든든한 울타리, 행동하는 학생회",
-                    imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400",
-                    pledges: [
-                        "기숙사/비자/정착 행정 가이드 최신화",
-                        "시험 기간 야식 및 간식 행사 지원",
-                        "귀국 및 취업 네트워킹 세미나 주최"
-                    ],
-                    votes: 15
+                    votes: 28
                 }
             ];
         }
     },
 
-    // 투표용 히브리대 이메일 인증번호 발송
+    // 2. 실시간 찬/반 집계 통계 조회 (신규 추가)
+    getVoteStats: async () => {
+        try {
+            const response = await client.get('/election/stats');
+            return response.data; // { approve: number, reject: number }
+        } catch (error) {
+            // 백엔드 엔드포인트 준비 전 테스트용 목데이터
+            return {
+                approve: 24,
+                reject: 3
+            };
+        }
+    },
+
+    // 3. 투표용 히브리대 이메일 인증번호 발송
     sendVoteEmailCode: async (email: string) => {
         const response = await client.post(`/election/send-code?email=${encodeURIComponent(email)}`);
         return response.data;
     },
 
-    // 투표용 이메일 인증번호 검증
+    // 4. 투표용 이메일 인증번호 검증
     verifyVoteEmailCode: async (email: string, code: string) => {
         const response = await client.post(`/election/verify-code?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`);
-        return response.data; // { success: true, message: "..." }
+        // boolean(true/false) 혹은 { success: boolean } 둘 다 안전하게 처리
+        return response.data?.success ?? response.data;
     },
 
-    // 최종 투표 제출
-    submitVote: async (payload: { email: string; code: string; candidateId: string | number }) => {
-        const response = await client.post('/election/vote', payload);
+    // 5. 최종 찬/반 투표 제출 (choice 필드 추가 및 candidateId 호환 유지)
+    submitVote: async (payload: {
+        email: string;
+        code: string;
+        candidateId?: string | number;
+        choice: 'APPROVE' | 'REJECT'; // ★ 찬성 / 반대 필수값
+    }) => {
+        // 백엔드가 기존 candidateId(예: 1=찬성, 0=반대)만 받는 경우와
+        // 새로운 choice('APPROVE'/'REJECT') 필드를 받는 경우 모두 대응되도록 전송
+        const body = {
+            ...payload,
+            candidateId: payload.candidateId ?? (payload.choice === 'APPROVE' ? 1 : 0)
+        };
+        const response = await client.post('/election/vote', body);
         return response.data;
     },
 
-    // 특정 이메일의 투표 여부 확인
+    // 6. 특정 이메일의 투표 여부 확인
     checkVotedStatus: async (email: string) => {
         try {
             const response = await client.get(`/election/check?email=${encodeURIComponent(email)}`);
@@ -722,6 +733,5 @@ export const api = {
             return { hasVoted: false };
         }
     }
-
 
 };

@@ -3,7 +3,6 @@ import { User, Info, Executive, Candidate } from '../types';
 import { api } from '../api';
 import { useNavigate } from 'react-router-dom';
 
-
 interface AdminDashboardProps {
    user: User | null;
    infos: Info[]; 
@@ -46,8 +45,6 @@ const getImageUrl = (url: string, name: string) => {
    return url;
 };
 
-
-
 const formatDate = (dateString?: string | Date) => {
    if (!dateString) return '-';
    if (typeof dateString === 'string') return dateString.split('T')[0];
@@ -55,7 +52,6 @@ const formatDate = (dateString?: string | Date) => {
 };
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }) => {
-   // ★ Candidates 탭 추가
    const [tab, setTab] = useState<'Content' | 'Users' | 'Executives' | 'Candidates'>('Content');
    const [users, setUsers] = useState<User[]>([]);
    const [executives, setExecutives] = useState<Executive[]>([]);
@@ -76,7 +72,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
    const [modalMode, setModalMode] = useState<'PROMOTE' | 'EDIT'>('PROMOTE');
    const [formData, setFormData] = useState<ExecutiveFormData>({ role: '', name: '', school: '', intro: '', imageUrl: '' });
 
-   // ★ 후보자 등록/수정 모달 State
+   // 후보자 등록/수정 모달 State
    const [isCandidateModalOpen, setIsCandidateModalOpen] = useState(false);
    const [candidateModalMode, setCandidateModalMode] = useState<'CREATE' | 'EDIT'>('CREATE');
    const [candidateFormData, setCandidateFormData] = useState<CandidateFormData>({
@@ -192,7 +188,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
       setIsModalOpen(true);
    };
 
-   // ★ 후보자 등록/수정 모달 핸들러
+   // 후보자 등록/수정 모달 핸들러
    const openCreateCandidateModal = () => {
       setCandidateModalMode('CREATE');
       setCandidateFormData({
@@ -235,7 +231,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
       }
    };
 
-   // 공약 입력창 추가/제거
    const handlePledgeChange = (index: number, value: string) => {
       const newPledges = [...candidateFormData.pledges];
       newPledges[index] = value;
@@ -300,7 +295,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
       }
    };
 
-   // ★ 후보자 등록/수정 제출
+   // 후보자 등록/수정 제출
    const handleCandidateModalSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       setIsSubmitting(true);
@@ -367,7 +362,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
                <button onClick={() => setTab('Executives')} className={`px-6 py-2.5 rounded-xl text-xs font-black transition-all ${tab === 'Executives' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
                   임원진 관리
                </button>
-               {/* ★ 후보자 관리 탭 버튼 */}
                <button onClick={() => setTab('Candidates')} className={`px-6 py-2.5 rounded-xl text-xs font-black transition-all ${tab === 'Candidates' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-600 hover:bg-indigo-50'}`}>
                   🗳️ 선거 후보 관리 ({candidates.length})
                </button>
@@ -557,13 +551,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
                </div>
             )}
 
-            {/* ★ 4. [신규] 선거 후보 관리 탭 */}
+            {/* ★ 4. 선거 후보 관리 탭 (찬/반 투표 실시간 현황판 지원) */}
             {tab === 'Candidates' && (
                <div className="space-y-6">
-                  <div className="flex justify-between items-center px-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-4">
                      <div>
-                        <h2 className="text-xl font-black text-slate-900">학생회장 선거 후보 관리</h2>
-                        <p className="text-xs text-slate-400 font-bold mt-1">등록된 후보자는 투표 페이지(/election)에 즉시 반영됩니다.</p>
+                        <div className="flex items-center gap-3">
+                           <h2 className="text-xl font-black text-slate-900">학생회장 선거 후보 관리</h2>
+                           <span className="px-2.5 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black rounded-lg">
+                              단일 후보 찬반 투표 모드
+                           </span>
+                        </div>
+                        <p className="text-xs text-slate-400 font-bold mt-1">실시간 찬성·반대 득표율을 모니터링하고 후보자 프로필을 관리합니다.</p>
                      </div>
                      <button
                         onClick={openCreateCandidateModal}
@@ -574,41 +573,74 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                     {candidates.map(c => (
-                        <div key={c.id} className="bg-white p-7 rounded-[2.5rem] border border-slate-100 shadow-sm relative group space-y-4 hover:shadow-md transition-all flex flex-col justify-between">
-                           <div>
-                              <div className="flex justify-between items-start mb-4">
-                                 <span className="px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-black">
-                                    기호 {c.candidateNumber}번
-                                 </span>
-                                 <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => openEditCandidateModal(c)} className="px-2.5 py-1 bg-slate-900 text-white text-[10px] font-black rounded-lg hover:bg-slate-800">EDIT</button>
-                                    <button onClick={() => handleDeleteCandidate(c)} className="px-2.5 py-1 bg-red-50 text-red-500 hover:bg-red-100 text-[10px] font-black rounded-lg">DELETE</button>
-                                 </div>
-                              </div>
+                     {candidates.map(c => {
+                        const approveVotes = c.votes || 0;
+                        const rejectVotes = (c as any).rejectVotes || 0;
+                        const totalCandidateVotes = approveVotes + rejectVotes;
+                        const approvePercentage = totalCandidateVotes === 0 ? 0 : Math.round((approveVotes / totalCandidateVotes) * 100);
 
-                              <div className="flex items-center gap-4 mb-4">
-                                 <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-slate-100 bg-slate-50 shrink-0">
-                                    <img src={c.imageUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400"} className="w-full h-full object-cover" alt={c.name} />
+                        return (
+                           <div key={c.id} className="bg-white p-7 rounded-[2.5rem] border border-slate-100 shadow-sm relative group space-y-5 hover:shadow-md transition-all flex flex-col justify-between">
+                              <div>
+                                 <div className="flex justify-between items-start mb-4">
+                                    <span className="px-3 py-1 bg-slate-900 text-white rounded-full text-[10px] font-black">
+                                       기호 {c.candidateNumber}번 단일 후보
+                                    </span>
+                                    <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                       <button onClick={() => openEditCandidateModal(c)} className="px-2.5 py-1 bg-slate-900 text-white text-[10px] font-black rounded-lg hover:bg-slate-800">EDIT</button>
+                                       <button onClick={() => handleDeleteCandidate(c)} className="px-2.5 py-1 bg-red-50 text-red-500 hover:bg-red-100 text-[10px] font-black rounded-lg">DELETE</button>
+                                    </div>
                                  </div>
-                                 <div>
-                                    <h4 className="font-black text-slate-900 text-lg">{c.name}</h4>
-                                    <p className="text-xs font-bold text-slate-400">{c.school}</p>
-                                    <span className="text-[11px] font-black text-indigo-600">현재 {c.votes || 0}표</span>
-                                 </div>
-                              </div>
 
-                              <div className="bg-slate-50 p-4 rounded-2xl space-y-2">
-                                 <div className="text-[10px] font-black text-indigo-600 italic">"{c.slogan}"</div>
-                                 <ul className="text-xs text-slate-600 space-y-1 list-disc list-inside pt-1 font-medium">
-                                    {c.pledges?.map((p, idx) => (
-                                       <li key={idx} className="line-clamp-1">{p}</li>
-                                    ))}
-                                 </ul>
+                                 <div className="flex items-center gap-4 mb-5">
+                                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-slate-100 bg-slate-50 shrink-0">
+                                       <img src={c.imageUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400"} className="w-full h-full object-cover" alt={c.name} />
+                                    </div>
+                                    <div className="flex-1">
+                                       <h4 className="font-black text-slate-900 text-lg">{c.name}</h4>
+                                       <p className="text-xs font-bold text-slate-400">{c.school}</p>
+                                    </div>
+                                 </div>
+
+                                 {/* ★ 실시간 찬/반 집계 통계 박스 */}
+                                 <div className="bg-slate-50 p-4 rounded-2xl space-y-2 mb-4">
+                                    <div className="flex justify-between items-center text-xs font-black">
+                                       <span className="text-indigo-600 flex items-center gap-1">
+                                          👍 찬성 {approveVotes}표
+                                       </span>
+                                       <span className="text-rose-500 flex items-center gap-1">
+                                          👎 반대 {rejectVotes}표
+                                       </span>
+                                    </div>
+
+                                    {/* 득표율 프로그레스 바 */}
+                                    <div className="w-full bg-rose-200 rounded-full h-2.5 overflow-hidden flex">
+                                       <div 
+                                          className="bg-indigo-600 h-full transition-all duration-500" 
+                                          style={{ width: `${approvePercentage}%` }}
+                                          title={`찬성: ${approvePercentage}%`}
+                                       ></div>
+                                    </div>
+
+                                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 pt-0.5">
+                                       <span>찬성률: {approvePercentage}%</span>
+                                       <span>총 {totalCandidateVotes}표</span>
+                                    </div>
+                                 </div>
+
+                                 <div className="bg-slate-50/70 p-4 rounded-2xl space-y-2">
+                                    <div className="text-[10px] font-black text-indigo-600 italic">"{c.slogan}"</div>
+                                    <ul className="text-xs text-slate-600 space-y-1 list-disc list-inside pt-1 font-medium">
+                                       {c.pledges?.map((p, idx) => (
+                                          <li key={idx} className="line-clamp-1">{p}</li>
+                                       ))}
+                                    </ul>
+                                 </div>
                               </div>
                            </div>
-                        </div>
-                     ))}
+                        );
+                     })}
+
                      {candidates.length === 0 && (
                         <div className="col-span-full py-20 text-center bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200">
                            <div className="text-4xl mb-3">🗳️</div>
@@ -658,7 +690,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
             </div>
          )}
 
-         {/* ★ 2. [신규] 후보자 등록/수정 모달 */}
+         {/* 2. 후보자 등록/수정 모달 */}
          {isCandidateModalOpen && (
             <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
                <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => !isSubmitting && setIsCandidateModalOpen(false)}></div>
@@ -746,10 +778,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ user, infos, setInfos }
                                  <input 
                                     type="text" 
                                     placeholder={`공약 ${idx + 1}`}
-                                    value={pledge}
-                                    onChange={e => handlePledgeChange(idx, e.target.value)}
-                                    className="flex-1 bg-slate-50 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 outline-none focus:ring-2 ring-slate-900/20"
-                                    required
+                                    value={pledge} 
+                                    onChange={e => handlePledgeChange(idx, e.target.value)} 
+                                    className="flex-1 bg-slate-50 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 outline-none focus:ring-2 ring-slate-900/20" 
+                                    required 
                                  />
                                  {candidateFormData.pledges.length > 1 && (
                                     <button type="button" onClick={() => removePledgeField(idx)} className="px-3 bg-red-50 text-red-500 rounded-xl font-bold hover:bg-red-100 text-xs">✕</button>
