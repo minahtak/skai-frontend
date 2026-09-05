@@ -26,7 +26,7 @@ const SINGLE_CANDIDATE: Candidate = {
 // ==========================================
 // 2. 선거 일정 설정 (이스라엘 현지 시간 기준)
 // ==========================================
-// 투표 마감: 9월 3일 23시 59분 59초
+// 투표 마감: 9월 7일 23시 59분 59초
 const ELECTION_END_TIME = new Date("2026-09-07T23:59:59+03:00").getTime();
 
 type VoteChoice = 'APPROVE' | 'REJECT';
@@ -56,7 +56,7 @@ const Election: React.FC = () => {
     // 선택된 찬반 상태
     const [selectedChoice, setSelectedChoice] = useState<VoteChoice | null>(null);
 
-    // 투표 종료 여부 확인 (현재 시간이 9월 3일 23:59:59를 지났는지 판별)
+    // 투표 종료 여부 확인 (현재 시간이 9월 7일 23:59:59를 지났는지 판별)
     const isElectionEnded = Date.now() > ELECTION_END_TIME;
 
     // 찬/반 집계 로드 & 기존 투표 이력 확인
@@ -276,7 +276,7 @@ const Election: React.FC = () => {
                 </div>
 
                 {/* ============================================================ */}
-                {/* CASE 1: 투표가 종료된 경우 (9월 4일 개표 결과 발표 화면) */}
+                {/* CASE 1: 투표가 종료된 경우 (9월 8일 개표 결과 발표 화면) */}
                 {/* ============================================================ */}
                 {isElectionEnded ? (
                     <div className="py-4 space-y-6 animate-in fade-in duration-300">
@@ -356,7 +356,7 @@ const Election: React.FC = () => {
                             </div>
 
                             <p className="text-[11px] text-slate-400 text-center pt-2 break-keep">
-                                ※ 본 선거는 9월 1일부터 9월 3일까지 진행되었으며, 9월 4일 공식 집계 및 검수를 마쳤습니다.
+                                ※ 본 선거는 9월 6일부터 9월 7일까지 진행되었으며, 9월 8일 공식 집계 및 검수를 마쳤습니다.
                             </p>
                         </div>
                     </div>
@@ -384,7 +384,7 @@ const Election: React.FC = () => {
                                 개표 결과 안내
                             </div>
                             <p className="text-xs text-slate-600 leading-relaxed break-keep">
-                                선거의 공정성을 위해 <strong>실시간 개표율은 비공개</strong>로 유지되며, 최종 개표 결과는 <strong>9월 4일 본 페이지 및 학생회 공식 공지</strong>를 통해 발표됩니다.
+                                선거의 공정성을 위해 <strong>실시간 개표율은 비공개</strong>로 유지되며, 최종 개표 결과는 <strong>9월 8일 본 페이지 및 학생회 공식 공지</strong>를 통해 발표됩니다.
                             </p>
                             <div className="pt-2 border-t border-slate-200/60 text-[11px] text-slate-400 break-keep">
                                 ※ 웹메일 인증 기록과 실제 투표 데이터는 분리되어 비밀투표가 철저히 보장됩니다.
