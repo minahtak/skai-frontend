@@ -27,7 +27,7 @@ const SINGLE_CANDIDATE: Candidate = {
 // 2. 선거 일정 설정 (이스라엘 현지 시간 기준)
 // ==========================================
 // 투표 마감: 9월 3일 23시 59분 59초
-const ELECTION_END_TIME = new Date("2026-09-03T23:59:59+03:00").getTime();
+const ELECTION_END_TIME = new Date("2026-09-07T23:59:59+03:00").getTime();
 
 type VoteChoice = 'APPROVE' | 'REJECT';
 
@@ -224,7 +224,7 @@ const Election: React.FC = () => {
                         히브리대학교 한인 학생회 공식 선거 페이지입니다.
                     </p>
                     <p className="text-[11px] sm:text-xs text-slate-400 font-medium">
-                        투표 기간: 9월 1일 ~ 9월 3일 · 당선 발표: 9월 4일
+                        투표 기간: 9월 6일 ~ 9월 7일 · 당선 발표: 9월 8일
                     </p>
                 </div>
             </header>
