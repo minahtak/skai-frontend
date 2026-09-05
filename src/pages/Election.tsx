@@ -573,7 +573,7 @@ const Election: React.FC = () => {
                 </h4>
                 <ul className="text-slate-500 font-normal space-y-1 text-xs list-disc list-inside leading-relaxed break-keep">
                     <li>투표는 <strong className="text-slate-700 font-medium">히브리대학교 공식 이메일(@mail.huji.ac.il)</strong> 인증을 완료한 유권자에 한해 1인 1표로 진행됩니다.</li>
-                    <li>투표 기간은 <strong>9월 1일부터 9월 3일 23:59까지</strong>이며, 이후에는 투표 제출이 불가합니다.</li>
+                    <li>투표 기간은 <strong>9월 6일부터 9월 7일 23:59까지</strong>이며, 이후에는 투표 제출이 불가합니다.</li>
                     <li>웹메일 인증 정보와 투표 결과 데이터는 분리 처리되어 <strong className="text-slate-700 font-medium">비밀 투표</strong>가 보장됩니다.</li>
                 </ul>
             </footer>
