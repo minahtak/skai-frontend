@@ -205,101 +205,68 @@ const Election: React.FC = () => {
                     학교 이메일(<span className="text-indigo-600 font-medium">@mail.huji.ac.il</span>) 인증 후 투표해 주세요.
                 </p>
             </header>
-
+            
             {/* 2. 메인 투표함 섹션 */}
             <section className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 shadow-sm relative">
-                
-                {/* 헤더 부분: 모바일에서 세로/가로 자동 대응 및 글자 쪼개짐 완전 방지 */}
+
+                {/* 헤더 부분: 모바일 대응 및 글자 쪼개짐 방지 */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-4 border-b border-slate-100 pb-4 mb-6">
                     <div>
                         <h2 className="text-base sm:text-lg font-bold text-slate-900">투표하기</h2>
                         <p className="text-[11px] sm:text-xs text-slate-400 whitespace-nowrap">1인 1표 · 비밀투표 보장</p>
                     </div>
 
-                    {/* 우측 상태 인디케이터: 이미 투표한 경우 깔끔하게 '투표 완료' 뱃지만 표기 */}
+                    {/* 우측 상태 인디케이터 */}
                     {hasVoted ? (
                         <div className="self-start sm:self-auto">
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-md whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-md whitespace-nowrap">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                 투표 완료
                             </span>
                         </div>
                     ) : (
                         <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold whitespace-nowrap self-start sm:self-auto shrink-0">
-                            <span className={`px-2.5 py-1 rounded-md transition-colors ${
-                                isEmailVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-600 text-white'
-                            }`}>
+                            <span className={`px-2.5 py-1 rounded-md transition-colors ${isEmailVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-600 text-white'
+                                }`}>
                                 1. 본인인증
                             </span>
                             <span className="text-slate-300 text-xs">→</span>
-                            <span className={`px-2.5 py-1 rounded-md transition-colors ${
-                                isEmailVerified ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'
-                            }`}>
+                            <span className={`px-2.5 py-1 rounded-md transition-colors ${isEmailVerified ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'
+                                }`}>
                                 2. 찬/반 표결
                             </span>
                         </div>
                     )}
                 </div>
 
-                {/* 상황 A: 이미 투표를 완료한 경우 (안내 문구 + 실시간 개표율) */}
+                {/* 상황 A: 이미 투표를 완료한 경우 (개표율 삭제 및 마감 후 발표 안내) */}
                 {hasVoted ? (
-                    <div className="py-2 space-y-6 animate-in fade-in duration-300">
-                        <div className="text-center space-y-1">
-                            <div className="inline-block px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-full">
-                                투표를 완료하셨습니다.
-                            </div>
-                            <p className="text-[11px] sm:text-xs text-slate-400">실시간 개표 현황입니다.</p>
+                    <div className="py-6 sm:py-8 text-center space-y-4 animate-in fade-in duration-300">
+                        {/* 간결한 완료 심볼 */}
+                        <div className="w-12 h-12 mx-auto rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-bold shadow-sm">
+                            ✓
                         </div>
 
-                        {/* 실시간 찬반 개표 현황 */}
-                        <div className="max-w-xl mx-auto pt-2 space-y-4 text-left">
-                            <div className="flex justify-between items-center text-xs">
-                                <span className="font-bold text-slate-700">실시간 개표율</span>
-                                <span className="text-slate-400">총 {totalVotes}명 참여</span>
+                        <div className="space-y-1">
+                            <h3 className="text-base sm:text-lg font-bold text-slate-900 break-keep">
+                                소중한 한 표가 정상적으로 등록되었습니다
+                            </h3>
+                            <p className="text-xs text-slate-500 break-keep">
+                                히브리대학교 한인학생회장 선거에 참여해 주셔서 감사합니다.
+                            </p>
+                        </div>
+
+                        {/* 개표 결과 안내 카드 */}
+                        <div className="max-w-md mx-auto mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-left space-y-2">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                                개표 결과 안내
                             </div>
-
-                            <div className="space-y-3">
-                                {/* 찬성 */}
-                                <div className="space-y-1.5">
-                                    <div className="flex justify-between text-xs font-medium">
-                                        <span className="text-indigo-700 font-bold flex items-center gap-1.5">
-                                            <span>찬성</span>
-                                            {myVote === 'APPROVE' && (
-                                                <span className="text-[10px] bg-indigo-50 px-1.5 py-0.5 rounded text-indigo-600 font-normal">
-                                                    내 선택
-                                                </span>
-                                            )}
-                                        </span>
-                                        <span className="text-slate-700 font-semibold">{approveRate}% ({voteStats.approve}표)</span>
-                                    </div>
-                                    <div className="w-full bg-slate-100 h-2.5 sm:h-3 rounded-full overflow-hidden">
-                                        <div 
-                                            className="bg-indigo-600 h-full transition-all duration-500 rounded-full" 
-                                            style={{ width: `${approveRate}%` }}
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* 반대 */}
-                                <div className="space-y-1.5">
-                                    <div className="flex justify-between text-xs font-medium">
-                                        <span className="text-slate-700 font-bold flex items-center gap-1.5">
-                                            <span>반대</span>
-                                            {myVote === 'REJECT' && (
-                                                <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-normal">
-                                                    내 선택
-                                                </span>
-                                            )}
-                                        </span>
-                                        <span className="text-slate-700 font-semibold">{rejectRate}% ({voteStats.reject}표)</span>
-                                    </div>
-                                    <div className="w-full bg-slate-100 h-2.5 sm:h-3 rounded-full overflow-hidden">
-                                        <div 
-                                            className="bg-slate-400 h-full transition-all duration-500 rounded-full" 
-                                            style={{ width: `${rejectRate}%` }}
-                                        />
-                                    </div>
-                                </div>
+                            <p className="text-xs text-slate-600 leading-relaxed break-keep">
+                                선거의 공정성을 위해 <strong>실시간 개표율은 비공개</strong>로 진행되며, 최종 찬반 집계 결과는 <strong>투표 기간 종료 후 학생회 공식 공지</strong>를 통해 발표됩니다.
+                            </p>
+                            <div className="pt-2 border-t border-slate-200/60 text-[11px] text-slate-400 break-keep">
+                                ※ 웹메일 인증 기록과 실제 투표 데이터는 분리되어 익명성과 비밀투표가 철저히 보장됩니다.
                             </div>
                         </div>
                     </div>
@@ -382,11 +349,10 @@ const Election: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setSelectedChoice('APPROVE')}
-                                        className={`p-4 sm:p-5 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${
-                                            selectedChoice === 'APPROVE'
+                                        className={`p-4 sm:p-5 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${selectedChoice === 'APPROVE'
                                                 ? 'border-indigo-600 bg-indigo-50/70 text-indigo-950 shadow-sm'
                                                 : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
-                                        }`}
+                                            }`}
                                     >
                                         <span className="text-base sm:text-lg font-bold">찬성</span>
                                         <span className="text-[11px] text-slate-400 font-medium">당선 동의</span>
@@ -395,11 +361,10 @@ const Election: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => setSelectedChoice('REJECT')}
-                                        className={`p-4 sm:p-5 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${
-                                            selectedChoice === 'REJECT'
+                                        className={`p-4 sm:p-5 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${selectedChoice === 'REJECT'
                                                 ? 'border-slate-800 bg-slate-100 text-slate-950 shadow-sm'
                                                 : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
-                                        }`}
+                                            }`}
                                     >
                                         <span className="text-base sm:text-lg font-bold">반대</span>
                                         <span className="text-[11px] text-slate-400 font-medium">당선 반대</span>
@@ -411,17 +376,16 @@ const Election: React.FC = () => {
                                         type="button"
                                         onClick={handleVoteSubmit}
                                         disabled={!selectedChoice || isSubmitting}
-                                        className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all ${
-                                            selectedChoice
+                                        className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all ${selectedChoice
                                                 ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm'
                                                 : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                                        }`}
+                                            }`}
                                     >
                                         {isSubmitting
                                             ? "투표 제출 중..."
                                             : selectedChoice
-                                            ? `[${selectedChoice === 'APPROVE' ? '찬성' : '반대'}] 투표 제출하기`
-                                            : "찬성 또는 반대를 선택해주세요"}
+                                                ? `[${selectedChoice === 'APPROVE' ? '찬성' : '반대'}] 투표 제출하기`
+                                                : "찬성 또는 반대를 선택해주세요"}
                                     </button>
                                 </div>
                             </div>
